@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:json_annotation/json_annotation.dart';
+import 'package:musicplayer/musicplayer.dart';
 
 import 'server.dart';
 
@@ -39,6 +41,10 @@ class YoutubeResult {
   @override
   String toString() {
     return json.encode(_$YoutubeResultToJson(this));
+  }
+
+  MusicTrack toTrack(String apiKey) {
+    return new MusicTrack(apiKey, title, id, thumbnail, duration);
   }
 }
 

@@ -277,6 +277,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.2"
+  musicplayer:
+    dependency: "direct dev"
+    description:
+      path: musicplayer
+      relative: true
+    source: path
+    version: "0.0.1"
   node_preamble:
     dependency: transitive
     description:

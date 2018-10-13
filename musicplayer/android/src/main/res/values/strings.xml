@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="music_player">Music player</string>
+    <string name="pause">Pause</string>
+    <string name="play">Play</string>
+    <string name="next">Next</string>
+    <string name="stop">Stop</string>
+    <string name="failed">Failed</string>
+    <string name="loading">Loading</string>
+</resources>

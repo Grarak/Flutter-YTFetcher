@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:musicplayer/musicplayer.dart';
 
 import 'pages/front.dart';
 import 'pages/playlists.dart';
+import 'view_utils.dart';
 
 class NavigationItem {
   String title;
@@ -13,10 +15,11 @@ class NavigationItem {
 
 class Home extends StatelessWidget {
   final List<NavigationItem> items = new List();
+  final Musicplayer musicplayer = new Musicplayer();
 
   Home(String apiKey, String host) {
-    items.add(
-        new NavigationItem("Front", Icons.home, new FrontPage(apiKey, host)));
+    items.add(new NavigationItem(
+        "Front", Icons.home, new FrontPage(apiKey, musicplayer, host)));
     items.add(new NavigationItem(
         "Playlists", Icons.playlist_play, new PlaylistsPage()));
   }
@@ -27,15 +30,16 @@ class Home extends StatelessWidget {
       theme: new ThemeData(
         primarySwatch: Colors.pink,
       ),
-      home: new HomePage(items),
+      home: new HomePage(items, musicplayer),
     );
   }
 }
 
 class HomePage extends StatefulWidget {
   final List<NavigationItem> items;
+  final Musicplayer musicplayer;
 
-  HomePage(this.items);
+  HomePage(this.items, this.musicplayer);
 
   @override
   State<StatefulWidget> createState() {
@@ -45,6 +49,16 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int current = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance
+        .addObserver(new LifecycleEventHandler(suspendingCallBack: () {
+      widget.musicplayer.unbind();
+    }));
+  }
 
   @override
   Widget build(BuildContext context) {

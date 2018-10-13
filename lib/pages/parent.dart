@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:musicplayer/musicplayer.dart';
 
 import '../api/server.dart';
 
 abstract class ParentPage<S extends Server> extends StatefulWidget {
   final String apiKey;
+  final Musicplayer musicplayer;
   final S server;
 
-  ParentPage(this.apiKey, this.server, {Key key}) : super(key: key);
+  ParentPage(this.apiKey, this.musicplayer, this.server, {Key key})
+      : super(key: key);
 }
 
 abstract class ParentPageState<T extends ParentPage> extends State<T> {
