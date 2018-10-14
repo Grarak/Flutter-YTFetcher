@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/services.dart';
 
 class MusicTrack {
@@ -7,7 +9,26 @@ class MusicTrack {
   String thumbnail;
   String duration;
 
+  RegExp _titleExp = new RegExp("(.+)[:| -] (.+)");
+
   MusicTrack(this.apiKey, this.title, this.id, this.thumbnail, this.duration);
+
+  factory MusicTrack.fromJson(Map<String, dynamic> json) {
+    return new MusicTrack(
+        json["apiKey"] as String,
+        json["title"] as String,
+        json["id"] as String,
+        json["thumbnail"] as String,
+        json["duration"] as String);
+  }
+
+  static List<MusicTrack> fromJsonList(List<dynamic> list) {
+    List<MusicTrack> tracks = new List(list.length);
+    for (int i = 0; i < list.length; i++) {
+      tracks[i] = MusicTrack.fromJson(json.decode(list[i]));
+    }
+    return tracks;
+  }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -18,46 +39,86 @@ class MusicTrack {
       'duration': duration,
     };
   }
+
+  String getFormattedTitle() {
+    if (_titleExp.hasMatch(title)) {
+      Match match = _titleExp.firstMatch(title);
+      return match.group(1) + "\n" + match.group(2);
+    }
+
+    String formattedTitle = title;
+    String contentText = id;
+    if (title.length > 20) {
+      String tmp = title.substring(20);
+      int whitespaceIndex = tmp.indexOf(' ');
+      if (whitespaceIndex >= 0) {
+        int firstWhitespace = 20 + tmp.indexOf(' ');
+        contentText = title.substring(firstWhitespace + 1);
+        title = title.substring(0, firstWhitespace);
+      }
+    }
+    return formattedTitle + "\n" + contentText;
+  }
+}
+
+enum PlayingState {
+  PREPARING,
+  PLAYING,
+  PAUSED,
 }
 
 abstract class MusicListener {
-  void onPreparing(List<MusicTrack> tracks, int position);
+  void onStateChanged(
+      PlayingState state, List<MusicTrack> tracks, int position);
 
   void onFailure(int code, List<MusicTrack> tracks, int position);
-
-  void onPlay(List<MusicTrack> tracks, int position);
-
-  void onPause(List<MusicTrack> tracks, int position);
 
   void onDisconnect();
 }
 
 class Musicplayer {
-  final MethodChannel _channel = MethodChannel("musicplayer");
-  final Set<MusicListener> _listeners = new Set();
+  MethodChannel _channel = MethodChannel("musicplayer");
+  MusicListener _listener;
 
   Musicplayer() {
     _channel.setMethodCallHandler(_handler);
   }
 
-  void addListener(MusicListener listener) {
-    _listeners.add(listener);
-    print(_listeners.length);
+  set listener(MusicListener listener) {
+    _listener = listener;
+    _channel.invokeMethod("notify");
+  }
+
+  get listener {
+    return _listener;
   }
 
   Future<dynamic> _handler(MethodCall call) async {
     switch (call.method) {
       case "onPreparing":
-        break;
+        return _listener?.onStateChanged(
+            PlayingState.PREPARING,
+            MusicTrack.fromJsonList(call.arguments["tracks"]),
+            call.arguments["position"]);
       case "onFailure":
-        break;
+        return _listener?.onFailure(
+            call.arguments["code"],
+            MusicTrack.fromJsonList(call.arguments["tracks"]),
+            call.arguments["position"]);
       case "onPlay":
-        break;
+        return _listener?.onStateChanged(
+            PlayingState.PLAYING,
+            MusicTrack.fromJsonList(call.arguments["tracks"]),
+            call.arguments["position"]);
       case "onPause":
-        break;
+        return _listener?.onStateChanged(
+            PlayingState.PAUSED,
+            MusicTrack.fromJsonList(call.arguments["tracks"]),
+            call.arguments["position"]);
+      case "onDisconnect":
+        return _listener?.onDisconnect();
       default:
-        call.noSuchMethod(null);
-        break;
+        return call.noSuchMethod(null);
     }
   }
 
@@ -76,6 +137,14 @@ class Musicplayer {
       "tracks": jsonTracks,
       "position": position
     });
+  }
+
+  Future<dynamic> resume() {
+    return _channel.invokeMethod("resume");
+  }
+
+  Future<dynamic> pause() {
+    return _channel.invokeMethod("pause");
   }
 
   Future<dynamic> unbind() async {

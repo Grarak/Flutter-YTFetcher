@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../api/youtube_server.dart';
 
@@ -25,7 +26,7 @@ class Music extends StatelessWidget {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(Radius.circular(4.0))),
               child: Ink.image(
-                image: NetworkImage(result.thumbnail),
+                image: CachedNetworkImageProvider(result.thumbnail),
                 fit: BoxFit.cover,
                 child: InkWell(
                   onTap: () {

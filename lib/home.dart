@@ -4,6 +4,7 @@ import 'package:musicplayer/musicplayer.dart';
 import 'pages/front.dart';
 import 'pages/playlists.dart';
 import 'view_utils.dart';
+import 'widgets/music_bar.dart';
 
 class NavigationItem {
   String title;
@@ -47,15 +48,21 @@ class HomePage extends StatefulWidget {
   }
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> implements MusicListener {
   int current = 0;
+  MusicTrack currentTrack;
+  PlayingState currentState;
 
   @override
   void initState() {
     super.initState();
 
+    widget.musicplayer.listener = this;
+
     WidgetsBinding.instance
-        .addObserver(new LifecycleEventHandler(suspendingCallBack: () {
+        .addObserver(new LifecycleEventHandler(resumeCallBack: () {
+      widget.musicplayer.listener = this;
+    }, suspendingCallBack: () {
       widget.musicplayer.unbind();
     }));
   }
@@ -71,23 +78,60 @@ class _HomePageState extends State<HomePage> {
     }
 
     return new MaterialApp(
-        home: new Scaffold(
-      body: widget.items[current].widget,
-      bottomNavigationBar: new BottomNavigationBar(
-        onTap: (int index) {
-          setState(() {
-            current = index;
-          });
-        },
-        currentIndex: current,
-        items: List.generate(widget.items.length, (int index) {
-          NavigationItem item = widget.items[index];
-          return new BottomNavigationBarItem(
-            icon: new Icon(item.icon),
-            title: new Text(item.title),
-          );
-        }),
+      home: new Scaffold(
+        body: new Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            new Expanded(
+              child: widget.items[current].widget,
+            ),
+            new MusicBar(currentTrack, currentState, () {
+              widget.musicplayer.resume();
+            }, () {
+              widget.musicplayer.pause();
+            }, () {}),
+          ],
+        ),
+        bottomNavigationBar: new BottomNavigationBar(
+          onTap: (int index) {
+            setState(() {
+              current = index;
+            });
+          },
+          currentIndex: current,
+          items: List.generate(widget.items.length, (int index) {
+            NavigationItem item = widget.items[index];
+            return new BottomNavigationBarItem(
+              icon: new Icon(item.icon),
+              title: new Text(item.title),
+            );
+          }),
+        ),
       ),
-    ));
+    );
+  }
+
+  @override
+  void onStateChanged(
+      PlayingState state, List<MusicTrack> tracks, int position) {
+    print(state.toString() + " " + tracks[position].title);
+    setState(() {
+      currentTrack = tracks[position];
+      currentState = state;
+    });
+  }
+
+  @override
+  void onFailure(int code, List<MusicTrack> tracks, int position) {
+    onDisconnect();
+  }
+
+  @override
+  void onDisconnect() {
+    print("onDisconnect");
+    setState(() {
+      currentTrack = null;
+      currentState = null;
+    });
   }
 }

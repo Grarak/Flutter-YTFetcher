@@ -16,7 +16,8 @@ import java.util.concurrent.LinkedBlockingQueue
 /**
  * MusicplayerPlugin
  */
-class MusicplayerPlugin private constructor(private val context: Context, private val channel: MethodChannel) : MethodCallHandler {
+class MusicplayerPlugin private constructor(private val context: Context,
+                                            private val channel: MethodChannel) : MethodCallHandler {
 
     private var service: MusicplayerService? = null
     private val callingQueue = LinkedBlockingQueue<Runnable>()
@@ -48,6 +49,7 @@ class MusicplayerPlugin private constructor(private val context: Context, privat
             service?.pauseMusic()
             unbind()
             context.stopService(Intent(context, MusicplayerService::class.java))
+            channel.invokeMethod("onDisconnect", null)
         }
     }
 
@@ -55,12 +57,21 @@ class MusicplayerPlugin private constructor(private val context: Context, privat
         waitForService()
 
         when {
+            call.method == "notify" -> {
+                notifyListener()
+            }
             call.method == "playTracks" -> {
                 val url = call.argument<String>("url")
                 val tracks = call.argument<List<HashMap<String, Any>>>("tracks")
                 val position = call.argument<Int>("position")
                 playTracks(url!!, tracks!!, position!!)
                 result.success(null)
+            }
+            call.method == "resume" -> {
+                resume()
+            }
+            call.method == "pause" -> {
+                pause()
             }
             call.method == "unbind" -> {
                 unbind()
@@ -104,6 +115,27 @@ class MusicplayerPlugin private constructor(private val context: Context, privat
         }
     }
 
+    private fun notifyListener() {
+        executeCall(Runnable {
+            service!!.let {
+                if (it.isPlaying) {
+                    listener.onPlay(it.getTracks(), it.trackPosition)
+                } else if (it.isPreparing) {
+                    listener.onPreparing(it.getTracks(), it.trackPosition)
+                } else {
+                    val tracks = it.getTracks()
+                    if (tracks.isNotEmpty()
+                            && it.trackPosition >= 0
+                            && it.trackPosition < tracks.size) {
+                        listener.onPause(tracks, it.trackPosition)
+                    } else {
+                        channel.invokeMethod("onDisconnect", null)
+                    }
+                }
+            }
+        })
+    }
+
     private fun playTracks(url: String, tracks: List<HashMap<String, Any>>, position: Int) {
         executeCall(Runnable {
             val musicTracks = ArrayList<MusicTrack>(tracks.size)
@@ -115,6 +147,18 @@ class MusicplayerPlugin private constructor(private val context: Context, privat
             service!!.run {
                 playMusic(url, musicTracks, position)
             }
+        })
+    }
+
+    private fun resume() {
+        executeCall(Runnable {
+            service!!.resumeMusic()
+        })
+    }
+
+    private fun pause() {
+        executeCall(Runnable {
+            service!!.pauseMusic()
         })
     }
 
