@@ -64,7 +64,7 @@ class _LoginPageState extends State<LoginPage> {
       viewUtils.showMessageDialog(context, "Server address can't be empty");
       return;
     } else if (!serverAddressController.text.startsWith("http")) {
-      serverAddressController.text = "http://${serverAddressController.text}";
+      serverAddressController.text = "https://${serverAddressController.text}";
     }
 
     if (usernameController.text.length <= 3) {

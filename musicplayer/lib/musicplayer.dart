@@ -52,7 +52,7 @@ class MusicTrack {
       String tmp = title.substring(20);
       int whitespaceIndex = tmp.indexOf(' ');
       if (whitespaceIndex >= 0) {
-        int firstWhitespace = 20 + tmp.indexOf(' ');
+        int firstWhitespace = 20 + whitespaceIndex;
         contentText = title.substring(firstWhitespace + 1);
         title = title.substring(0, firstWhitespace);
       }

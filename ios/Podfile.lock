@@ -1,9 +1,15 @@
 PODS:
   - Flutter (1.0.0)
+  - MobileVLCKit (3.1.5)
   - musicplayer (0.0.1):
     - Flutter
+    - MobileVLCKit
+    - SDWebImage
   - path_provider (0.0.1):
     - Flutter
+  - SDWebImage (4.4.2):
+    - SDWebImage/Core (= 4.4.2)
+  - SDWebImage/Core (4.4.2)
   - shared_preferences (0.0.1):
     - Flutter
 
@@ -12,6 +18,11 @@ DEPENDENCIES:
   - musicplayer (from `.symlinks/plugins/musicplayer/ios`)
   - path_provider (from `.symlinks/plugins/path_provider/ios`)
   - shared_preferences (from `.symlinks/plugins/shared_preferences/ios`)
+
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - MobileVLCKit
+    - SDWebImage
 
 EXTERNAL SOURCES:
   Flutter:
@@ -25,10 +36,12 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
-  musicplayer: 20255788227548784b5407220cbd1da576c69721
+  MobileVLCKit: 4d44e56380d0ee41c76f9ec7015d3a4b62a963a3
+  musicplayer: 26dcfbde9a277167516f05a9d67b8dbf54066607
   path_provider: 09407919825bfe3c2deae39453b7a5b44f467873
+  SDWebImage: 624d6e296c69b244bcede364c72ae0430ac14681
   shared_preferences: 5a1d487c427ee18fcd3ea1f2a131569481834b53
 
 PODFILE CHECKSUM: 1e5af4103afd21ca5ead147d7b81d06f494f51a2
 
-COCOAPODS: 1.5.3
+COCOAPODS: 1.6.0.beta.1

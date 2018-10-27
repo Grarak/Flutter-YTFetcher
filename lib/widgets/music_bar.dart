@@ -56,10 +56,15 @@ class MusicBar extends StatelessWidget {
         new Expanded(
           child: new SizedBox.expand(
             child: new InkWell(
-              child: new Center(
-                child: new Text(
-                  _track.getFormattedTitle(),
-                  textAlign: TextAlign.center,
+              child: new Padding(
+                padding: EdgeInsets.only(left: 8.0, right: 8.0),
+                child: new Center(
+                  child: new Text(
+                    _track.title,
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
               onTap: onClick,
