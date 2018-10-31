@@ -375,7 +375,7 @@ class _SeekState extends State<_Seek> {
             widget.musicplayer.setPosition(position.toInt());
           },
           max: _duration.toDouble(),
-          min: 0,
+          min: 0.0,
         ),
       ],
     );
