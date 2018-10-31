@@ -14,6 +14,19 @@ class MusicBar extends StatelessWidget {
       : super(key: key);
 
   Widget _empty() {
+    if (_track != null && _state == PlayingState.FAILED) {
+      return new Center(
+        child: new Text(
+          "Couldn't play\n" + _track.title,
+          textAlign: TextAlign.center,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          style: new TextStyle(
+            color: Colors.red,
+          ),
+        ),
+      );
+    }
     return new Center(
       child: new Text("No music"),
     );
@@ -92,7 +105,9 @@ class MusicBar extends StatelessWidget {
       child: new Container(
         decoration: BoxDecoration(),
         height: 60.0,
-        child: _track == null ? _empty() : _music(),
+        child: _track == null || _state == PlayingState.FAILED
+            ? _empty()
+            : _music(),
       ),
     );
   }

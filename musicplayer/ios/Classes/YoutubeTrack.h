@@ -18,8 +18,6 @@
 
 @property(readonly, nonatomic) NSString *duration;
 
-@property(readonly, nonatomic) BOOL valid;
-
 - (id)initWithDictionary:(NSDictionary<NSString *, NSString *> *)json;
 
 - (NSArray<NSString *> *)getFormattedTitles;

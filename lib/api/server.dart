@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:collection';
 
 import 'request.dart';
 import 'codes.dart' as codes;
@@ -7,8 +8,7 @@ class Server {
   static const String _API_VERSION = "v1";
 
   String host;
-  List<Request> requests = new List();
-  bool closed = false;
+  Queue<Request> requests = new ListQueue();
 
   Server(this.host);
 
@@ -24,15 +24,11 @@ class Server {
 
   void _doRequest(Method method, String path, String data,
       onSuccess(String response), onError(int code, Object error)) {
-    if (closed) {
-      return;
-    }
-
     Map<String, String> headers = new Map();
     if (data != null) {
       headers["content-type"] = "application/json";
     }
-    requests.add(new Request(
+    requests.addLast(new Request(
         method,
         Uri.parse(host + "/api/" + _API_VERSION + "/" + path),
         headers,
@@ -49,10 +45,8 @@ class Server {
   }
 
   void close() {
-    closed = true;
-
-    for (Request request in requests) {
-      request.close();
+    while (requests.length != 0) {
+      requests.removeFirst().close();
     }
   }
 }

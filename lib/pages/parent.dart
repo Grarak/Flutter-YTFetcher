@@ -12,35 +12,55 @@ abstract class ParentPage<S extends Server> extends StatefulWidget {
       : super(key: key);
 }
 
-abstract class ParentPageState<T extends ParentPage> extends State<T> {
+abstract class ParentPageState<T extends ParentPage> extends State<T>
+    with TickerProviderStateMixin {
   int _gridAxisCount = 2;
   List<Widget> _widgets = new List();
+  bool _showLoading = false;
+
+  bool get showLoading => _showLoading;
+
+  set showLoading(bool loading) {
+    if (mounted) {
+      setState(() {
+        _showLoading = loading;
+      });
+    }
+  }
 
   int get gridAxisCount => _gridAxisCount;
 
   set gridAxisCount(int count) {
-    setState(() {
-      _gridAxisCount = count;
-    });
+    if (mounted) {
+      setState(() {
+        _gridAxisCount = count;
+      });
+    }
   }
 
   List<Widget> get widgets => _widgets;
 
   set widgets(List<Widget> widgets) {
-    setState(() {
-      _widgets = widgets;
-    });
+    if (mounted) {
+      setState(() {
+        _widgets = widgets;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      body: widgets.isEmpty
+      body: widgets.isEmpty || _showLoading
           ? new Center(child: new CircularProgressIndicator())
-          : new GridView.count(
-              crossAxisCount: _gridAxisCount,
-              children: _widgets,
-            ),
+          : _gridAxisCount <= 1
+              ? ListView(
+                  children: _widgets,
+                )
+              : new GridView.count(
+                  crossAxisCount: _gridAxisCount,
+                  children: _widgets,
+                ),
     );
   }
 }

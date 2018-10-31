@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import 'api/user_server.dart';
 import 'api/codes.dart' as codes;
@@ -22,7 +23,7 @@ class Login extends StatelessWidget {
     return new MaterialApp(
       title: 'YTFetcher',
       theme: new ThemeData(
-        primarySwatch: Colors.pink,
+        accentColor: CupertinoColors.activeBlue,
       ),
       home: new LoginPage(),
     );
@@ -103,7 +104,7 @@ class _LoginPageState extends State<LoginPage> {
         utils.Settings.setApiKey(user.apikey);
         utils.Settings.setHost(serverAddressController.text);
         Navigator.pushReplacement(context,
-            new MaterialPageRoute(builder: (BuildContext context) {
+            new CupertinoPageRoute(builder: (BuildContext context) {
           return new Home(user.apikey, serverAddressController.text);
         }));
       } else {

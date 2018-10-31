@@ -22,12 +22,12 @@ class _FrontPageState extends ParentPageState<FrontPage> {
     super.initState();
 
     if (widgets.isEmpty) {
-      widget.server.getCharts(new Youtube(apiKey: widget.apiKey),
+      widget.server.getCharts(new Youtube(apikey: widget.apiKey),
           (List<YoutubeResult> results) {
         widgets = List.generate(results.length, (int index) {
           return new Music(
             results[index],
-            horizontal: true,
+            horizontal: false,
             onClick: () async {
               await widget.musicplayer.playTrack(
                   widget.server.host, results[index].toTrack(widget.apiKey));

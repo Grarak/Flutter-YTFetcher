@@ -13,31 +13,86 @@ class Music extends StatelessWidget {
       {Key key, this.horizontal = false, this.onClick, this.onAddPlaylist})
       : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildImage() {
+    return new Padding(
+      padding: EdgeInsets.all(8.0),
+      child: new Material(
+        elevation: 4.0,
+        shape: new RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(4.0))),
+        child: Ink.image(
+          image: CachedNetworkImageProvider(result.thumbnail),
+          fit: BoxFit.cover,
+          child: InkWell(
+            onTap: () {
+              if (onClick != null) {
+                onClick();
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPopupMenu() {
+    return new PopupMenuButton<int>(
+      padding: EdgeInsets.zero,
+      icon: new Icon(Icons.more_vert),
+      onSelected: (int selection) {
+        switch (selection) {
+          case 0:
+            if (onAddPlaylist != null) {
+              onAddPlaylist();
+            }
+            break;
+        }
+      },
+      itemBuilder: (BuildContext context) => <PopupMenuItem<int>>[
+            PopupMenuItem<int>(
+              value: 0,
+              child: new Text("Add to playlist"),
+            ),
+          ],
+    );
+  }
+
+  Widget _buildHorizontal() {
+    return new AspectRatio(
+      aspectRatio: 3.2,
+      child: new Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          new Expanded(
+            child: _buildImage(),
+          ),
+          new Expanded(
+            child: new Row(
+              children: <Widget>[
+                new Expanded(
+                  child: new Center(
+                    child: new Text(
+                      result.title,
+                      maxLines: 5,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                _buildPopupMenu(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVertical() {
     return new Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         new Expanded(
-          child: new Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Material(
-              elevation: 4.0,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(4.0))),
-              child: Ink.image(
-                image: CachedNetworkImageProvider(result.thumbnail),
-                fit: BoxFit.cover,
-                child: InkWell(
-                  onTap: () {
-                    if (onClick != null) {
-                      onClick();
-                    }
-                  },
-                ),
-              ),
-            ),
-          ),
+          child: _buildImage(),
           flex: 3,
         ),
         new Expanded(
@@ -54,29 +109,17 @@ class Music extends StatelessWidget {
                   ),
                 ),
               ),
-              new PopupMenuButton<int>(
-                  padding: EdgeInsets.zero,
-                  icon: new Icon(Icons.more_vert),
-                  onSelected: (int selection) {
-                    switch (selection) {
-                      case 0:
-                        if (onAddPlaylist != null) {
-                          onAddPlaylist();
-                        }
-                        break;
-                    }
-                  },
-                  itemBuilder: (BuildContext context) => <PopupMenuItem<int>>[
-                        PopupMenuItem<int>(
-                          value: 0,
-                          child: const Text("Add to playlist"),
-                        ),
-                      ]),
+              _buildPopupMenu(),
             ],
           ),
           flex: 1,
         ),
       ],
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return horizontal ? _buildHorizontal() : _buildVertical();
   }
 }

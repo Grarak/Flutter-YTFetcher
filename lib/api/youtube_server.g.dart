@@ -8,7 +8,7 @@ part of 'youtube_server.dart';
 
 Youtube _$YoutubeFromJson(Map<String, dynamic> json) {
   return Youtube(
-      apiKey: json['apiKey'] as String,
+      apikey: json['apikey'] as String,
       searchquery: json['searchquery'] as String,
       id: json['id'] as String,
       addhistory: json['addhistory'] as bool);
@@ -23,7 +23,7 @@ Map<String, dynamic> _$YoutubeToJson(Youtube instance) {
     }
   }
 
-  writeNotNull('apiKey', instance.apiKey);
+  writeNotNull('apikey', instance.apikey);
   writeNotNull('searchquery', instance.searchquery);
   writeNotNull('id', instance.id);
   writeNotNull('addhistory', instance.addhistory);
@@ -31,8 +31,11 @@ Map<String, dynamic> _$YoutubeToJson(Youtube instance) {
 }
 
 YoutubeResult _$YoutubeResultFromJson(Map<String, dynamic> json) {
-  return YoutubeResult(json['title'] as String, json['id'] as String,
-      json['thumbnail'] as String, json['duration'] as String);
+  return YoutubeResult(
+      title: json['title'] as String,
+      id: json['id'] as String,
+      thumbnail: json['thumbnail'] as String,
+      duration: json['duration'] as String);
 }
 
 Map<String, dynamic> _$YoutubeResultToJson(YoutubeResult instance) {

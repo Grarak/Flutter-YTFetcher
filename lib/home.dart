@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:musicplayer/musicplayer.dart';
 
 import 'pages/front.dart';
 import 'pages/playlists.dart';
-import 'view_utils.dart';
+import 'pages/search.dart';
+import 'pages/music_control.dart';
+import 'view_utils.dart' as viewUtils;
 import 'widgets/music_bar.dart';
 
 class NavigationItem {
@@ -15,32 +18,36 @@ class NavigationItem {
 }
 
 class Home extends StatelessWidget {
+  final String host;
   final List<NavigationItem> items = new List();
   final Musicplayer musicplayer = new Musicplayer();
 
-  Home(String apiKey, String host) {
+  Home(String apiKey, this.host) {
     items.add(new NavigationItem(
         "Front", Icons.home, new FrontPage(apiKey, musicplayer, host)));
+    items.add(new NavigationItem("Playlists", Icons.playlist_play,
+        new PlaylistsPage(apiKey, musicplayer, host)));
     items.add(new NavigationItem(
-        "Playlists", Icons.playlist_play, new PlaylistsPage()));
+        "Search", Icons.search, new SearchPage(apiKey, musicplayer, host)));
   }
 
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
       theme: new ThemeData(
-        primarySwatch: Colors.pink,
+        accentColor: CupertinoColors.activeBlue,
       ),
-      home: new HomePage(items, musicplayer),
+      home: new HomePage(host, items, musicplayer),
     );
   }
 }
 
 class HomePage extends StatefulWidget {
+  final String host;
   final List<NavigationItem> items;
   final Musicplayer musicplayer;
 
-  HomePage(this.items, this.musicplayer);
+  HomePage(this.host, this.items, this.musicplayer);
 
   @override
   State<StatefulWidget> createState() {
@@ -57,13 +64,14 @@ class _HomePageState extends State<HomePage> implements MusicListener {
   void initState() {
     super.initState();
 
-    widget.musicplayer.listener = this;
+    widget.musicplayer.addListener(this);
 
     WidgetsBinding.instance
-        .addObserver(new LifecycleEventHandler(resumeCallBack: () {
-      widget.musicplayer.listener = this;
+        .addObserver(new viewUtils.LifecycleEventHandler(resumeCallBack: () {
+      widget.musicplayer.addListener(this);
     }, suspendingCallBack: () {
       widget.musicplayer.unbind();
+      widget.musicplayer.removeListener(this);
     }));
   }
 
@@ -77,35 +85,41 @@ class _HomePageState extends State<HomePage> implements MusicListener {
       );
     }
 
-    return new MaterialApp(
-      home: new Scaffold(
-        body: new Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            new Expanded(
-              child: widget.items[current].widget,
-            ),
-            new MusicBar(currentTrack, currentState, () {
-              widget.musicplayer.resume();
-            }, () {
-              widget.musicplayer.pause();
-            }, () {}),
-          ],
-        ),
-        bottomNavigationBar: new BottomNavigationBar(
-          onTap: (int index) {
-            setState(() {
-              current = index;
-            });
-          },
-          currentIndex: current,
-          items: List.generate(widget.items.length, (int index) {
+    return new Scaffold(
+      body: new Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          new Expanded(
+            child: widget.items[current].widget,
+          ),
+          new MusicBar(currentTrack, currentState, () {
+            widget.musicplayer.resume();
+          }, () {
+            widget.musicplayer.pause();
+          }, () {
+            Navigator.push(context,
+                new CupertinoPageRoute(builder: (BuildContext context) {
+              return new MusicControl(widget.host, widget.musicplayer);
+            }));
+          }),
+        ],
+      ),
+      bottomNavigationBar: new CupertinoTabBar(
+        onTap: (int index) {
+          setState(() {
+            current = index;
+          });
+        },
+        currentIndex: current,
+        items: List.generate(
+          widget.items.length,
+          (int index) {
             NavigationItem item = widget.items[index];
             return new BottomNavigationBarItem(
               icon: new Icon(item.icon),
               title: new Text(item.title),
             );
-          }),
+          },
         ),
       ),
     );
@@ -123,15 +137,22 @@ class _HomePageState extends State<HomePage> implements MusicListener {
 
   @override
   void onFailure(int code, List<MusicTrack> tracks, int position) {
-    onDisconnect();
+    print(PlayingState.FAILED.toString() + " " + tracks[position].title);
+    if (mounted) {
+      setState(() {
+        currentTrack = tracks[position];
+        currentState = PlayingState.FAILED;
+      });
+    }
   }
 
   @override
   void onDisconnect() {
-    print("onDisconnect");
-    setState(() {
-      currentTrack = null;
-      currentState = null;
-    });
+    if (mounted) {
+      setState(() {
+        currentTrack = null;
+        currentState = null;
+      });
+    }
   }
 }

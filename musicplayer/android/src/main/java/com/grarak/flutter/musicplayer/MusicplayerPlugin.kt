@@ -73,6 +73,16 @@ class MusicplayerPlugin private constructor(private val context: Context,
             call.method == "pause" -> {
                 pause()
             }
+            call.method == "getDuration" -> {
+                executeCall(Runnable {
+                    result.success(service!!.duration)
+                })
+            }
+            call.method == "getPosition" -> {
+                executeCall(Runnable {
+                    result.success(service!!.currentPosition)
+                })
+            }
             call.method == "unbind" -> {
                 unbind()
                 result.success(null)

@@ -9,7 +9,7 @@ class MusicTrack {
   String thumbnail;
   String duration;
 
-  RegExp _titleExp = new RegExp("(.+)[:| -] (.+)");
+  RegExp _titleExp = new RegExp("(.+)[:|-](.+)");
 
   MusicTrack(this.apiKey, this.title, this.id, this.thumbnail, this.duration);
 
@@ -40,10 +40,10 @@ class MusicTrack {
     };
   }
 
-  String getFormattedTitle() {
+  List<String> getFormattedTitle() {
     if (_titleExp.hasMatch(title)) {
       Match match = _titleExp.firstMatch(title);
-      return match.group(1) + "\n" + match.group(2);
+      return [match.group(2).trim(), match.group(1).trim()];
     }
 
     String formattedTitle = title;
@@ -54,10 +54,10 @@ class MusicTrack {
       if (whitespaceIndex >= 0) {
         int firstWhitespace = 20 + whitespaceIndex;
         contentText = title.substring(firstWhitespace + 1);
-        title = title.substring(0, firstWhitespace);
+        formattedTitle = title.substring(0, firstWhitespace);
       }
     }
-    return formattedTitle + "\n" + contentText;
+    return [contentText, formattedTitle];
   }
 }
 
@@ -65,6 +65,7 @@ enum PlayingState {
   PREPARING,
   PLAYING,
   PAUSED,
+  FAILED,
 }
 
 abstract class MusicListener {
@@ -78,47 +79,60 @@ abstract class MusicListener {
 
 class Musicplayer {
   MethodChannel _channel = MethodChannel("musicplayer");
-  MusicListener _listener;
+  Set<MusicListener> _listeners = new Set();
 
   Musicplayer() {
     _channel.setMethodCallHandler(_handler);
   }
 
-  set listener(MusicListener listener) {
-    _listener = listener;
-    _channel.invokeMethod("notify");
+  void addListener(MusicListener listener) {
+    if (!hasListener(listener)) {
+      _listeners.add(listener);
+      _channel.invokeMethod("notify");
+    }
   }
 
-  get listener {
-    return _listener;
+  void removeListener(MusicListener listener) {
+    _listeners.remove(listener);
+  }
+
+  bool hasListener(MusicListener listener) {
+    return _listeners.contains(listener);
   }
 
   Future<dynamic> _handler(MethodCall call) async {
-    switch (call.method) {
-      case "onPreparing":
-        return _listener?.onStateChanged(
-            PlayingState.PREPARING,
-            MusicTrack.fromJsonList(call.arguments["tracks"]),
-            call.arguments["position"]);
-      case "onFailure":
-        return _listener?.onFailure(
-            call.arguments["code"],
-            MusicTrack.fromJsonList(call.arguments["tracks"]),
-            call.arguments["position"]);
-      case "onPlay":
-        return _listener?.onStateChanged(
-            PlayingState.PLAYING,
-            MusicTrack.fromJsonList(call.arguments["tracks"]),
-            call.arguments["position"]);
-      case "onPause":
-        return _listener?.onStateChanged(
-            PlayingState.PAUSED,
-            MusicTrack.fromJsonList(call.arguments["tracks"]),
-            call.arguments["position"]);
-      case "onDisconnect":
-        return _listener?.onDisconnect();
-      default:
-        return call.noSuchMethod(null);
+    for (MusicListener listener in _listeners) {
+      switch (call.method) {
+        case "onPreparing":
+          listener.onStateChanged(
+              PlayingState.PREPARING,
+              MusicTrack.fromJsonList(call.arguments["tracks"]),
+              call.arguments["position"]);
+          break;
+        case "onFailure":
+          listener.onFailure(
+              call.arguments["code"],
+              MusicTrack.fromJsonList(call.arguments["tracks"]),
+              call.arguments["position"]);
+          break;
+        case "onPlay":
+          listener.onStateChanged(
+              PlayingState.PLAYING,
+              MusicTrack.fromJsonList(call.arguments["tracks"]),
+              call.arguments["position"]);
+          break;
+        case "onPause":
+          listener.onStateChanged(
+              PlayingState.PAUSED,
+              MusicTrack.fromJsonList(call.arguments["tracks"]),
+              call.arguments["position"]);
+          break;
+        case "onDisconnect":
+          listener.onDisconnect();
+          break;
+        default:
+          return call.noSuchMethod(null);
+      }
     }
   }
 
@@ -145,6 +159,19 @@ class Musicplayer {
 
   Future<dynamic> pause() {
     return _channel.invokeMethod("pause");
+  }
+
+  Future<int> getDuration() async {
+    return await _channel.invokeMethod("getDuration");
+  }
+
+  Future<int> getPosition() async {
+    return await _channel.invokeMethod("getPosition");
+  }
+
+  Future<dynamic> setPosition(int position) async {
+    return _channel
+        .invokeMethod("setPosition", <String, dynamic>{"position": position});
   }
 
   Future<dynamic> unbind() async {

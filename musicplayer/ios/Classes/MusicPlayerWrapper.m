@@ -18,8 +18,6 @@
 }
 
 - (void)mediaPlayerStateChanged:(NSNotification *)aNotification {
-    NSLog(@"state changed %u", _mediaPlayer.state);
-
     switch ([self getState]) {
         case Preparing:
             if (_mediaPlayer.willPlay && [self getDuration] != 0) {
@@ -34,12 +32,23 @@
             }
             break;
         case Paused:
-            if (!_mediaPlayer.isPlaying) {
+            if (_mediaPlayer.state == VLCMediaPlayerStatePaused) {
                 [self setState:Idle];
+                [_musicPlayerDelegate onPause];
+            }
+            break;
+        case Seeking:
+            if (_mediaPlayer.state == VLCMediaPlayerStateBuffering) {
+                [self setState:Idle];
+                [_musicPlayerDelegate onSeekComplete];
             }
             break;
         case Idle:
             break;
+    }
+
+    if (_mediaPlayer.state == VLCMediaPlayerStateEnded) {
+        [_musicPlayerDelegate onComplete];
     }
 }
 
@@ -57,6 +66,7 @@
 }
 
 - (void)setUrl:(NSString *)url {
+    [self stop];
     [self setState:Preparing];
     _mediaPlayer.media = [VLCMedia mediaWithURL:[NSURL URLWithString:url]];
     [self setSession];
@@ -65,10 +75,6 @@
 
 - (void)play {
     [self setState:Playing];
-    if (_mediaPlayer.state == VLCMediaPlayerStateStopped
-            || _mediaPlayer.state == VLCMediaPlayerStateEnded) {
-        _mediaPlayer.media = [VLCMedia mediaWithURL:_mediaPlayer.media.url];
-    }
     [self setSession];
     [_mediaPlayer play];
 }
@@ -76,6 +82,10 @@
 - (void)pause {
     [self setState:Paused];
     [_mediaPlayer pause];
+}
+
+- (void)stop {
+    [_mediaPlayer stop];
 }
 
 - (BOOL)isPreparing {
@@ -86,15 +96,16 @@
     return _mediaPlayer.isPlaying;
 }
 
-- (NSUInteger)getCurrentPosition {
-    return (NSUInteger) _mediaPlayer.time.intValue;
+- (int)getCurrentPosition {
+    return _mediaPlayer.time.intValue;
 }
 
-- (NSUInteger)getDuration {
-    return (NSUInteger) [[_mediaPlayer media] length].intValue;
+- (int)getDuration {
+    return [[_mediaPlayer media] length].intValue;
 }
 
-- (void)setPosition:(NSUInteger)position {
+- (void)setPosition:(int)position {
+    [self setState:Seeking];
     [_mediaPlayer setTime:[VLCTime timeWithInt:position]];
 }
 

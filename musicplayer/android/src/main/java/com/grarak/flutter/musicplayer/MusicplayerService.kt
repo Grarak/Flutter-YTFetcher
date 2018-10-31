@@ -31,7 +31,7 @@ class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, E
 
     private val youtubeServer = YoutubeServer()
     private lateinit var exoPlayer: ExoPlayerWrapper
-    private lateinit var notification: MusicPlayerNotification
+    private lateinit var notification: MusicplayerNotification
     private lateinit var audioManager: AudioManager
     var listener: MusicPlayerListener? = null
 
@@ -122,7 +122,7 @@ class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, E
                     .build()
         }
 
-        notification = MusicPlayerNotification(this)
+        notification = MusicplayerNotification(this)
 
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
 

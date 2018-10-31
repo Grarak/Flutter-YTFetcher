@@ -11,17 +11,26 @@ class Request {
     _start(method, uri, headers, data, onSuccess, onError);
   }
 
-  void _start(Method method, Uri uri, Map<String, String> headers, String data,
-      void onSuccess(int code, String response), void onError(Object error)) {
+  void _start(
+      Method method,
+      Uri uri,
+      Map<String, String> headers,
+      String data,
+      void onSuccess(int code, String response),
+      void onError(Object error)) async {
     if (client != null) {
       close();
     }
 
     client = new HttpClient();
+    client.connectionTimeout = new Duration(seconds: 2);
     String methodName = method.toString();
     methodName = methodName.substring(methodName.indexOf(".") + 1);
 
-    client.openUrl(methodName, uri).then((HttpClientRequest request) async {
+    HttpClientRequest request;
+    try {
+      request = await client.openUrl(methodName, uri);
+
       headers.forEach((String key, String value) {
         request.headers.add(key, value);
       });
@@ -30,9 +39,13 @@ class Request {
         request.contentLength = data.length;
         request.add(utf8.encode(data));
       }
+    } on SocketException catch (error) {
+      onError(error);
+      close();
+      return;
+    }
 
-      return request.close();
-    }).then((HttpClientResponse response) {
+    request.close().then((HttpClientResponse response) {
       switch (response.statusCode) {
         case HttpStatus.movedPermanently:
         case HttpStatus.movedTemporarily:

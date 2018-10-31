@@ -7,17 +7,22 @@
 #import <MobileVLCKit/MobileVLCKit.h>
 
 typedef NS_ENUM(NSInteger, MusicPlayerState) {
-    Preparing = 0,
-    Playing = 1,
-    Paused = 2,
-    Idle = 3
+    Preparing,
+    Playing,
+    Paused,
+    Seeking,
+    Idle
 };
 
 @protocol MusicPlayerDelegate
 
 - (void)onPrepared;
 
+- (void)onPause;
+
 - (void)onComplete;
+
+- (void)onSeekComplete;
 
 @end
 
@@ -36,13 +41,15 @@ typedef NS_ENUM(NSInteger, MusicPlayerState) {
 
 - (void)pause;
 
+- (void)stop;
+
 - (BOOL)isPreparing;
 
 - (BOOL)isPlaying;
 
-- (NSUInteger)getCurrentPosition;
+- (int)getCurrentPosition;
 
-- (NSUInteger)getDuration;
+- (int)getDuration;
 
-- (void)setPosition:(NSUInteger)position;
+- (void)setPosition:(int)position;
 @end

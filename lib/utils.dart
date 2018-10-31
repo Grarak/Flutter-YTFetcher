@@ -11,6 +11,15 @@ String toBase64(String data) {
   return base64.encode(utf8.encode(data));
 }
 
+String fromSeconds(int totalSeconds) {
+  int minutes = totalSeconds ~/ 60;
+  int seconds = totalSeconds % 60;
+
+  String minutesString = minutes < 10 ? "0$minutes" : minutes.toString();
+  String secondsString = seconds < 10 ? "0$seconds" : seconds.toString();
+  return "$minutesString:$secondsString";
+}
+
 class Settings {
   static void setApiKey(String apiKey) {
     saveString("apikey", apiKey);

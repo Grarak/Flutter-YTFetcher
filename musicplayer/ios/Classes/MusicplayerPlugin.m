@@ -8,6 +8,7 @@
     FlutterMethodChannel *channel = [FlutterMethodChannel
             methodChannelWithName:@"musicplayer"
                   binaryMessenger:[registrar messenger]];
+    NSLog(@"initialize");
     MusicplayerPlugin *instance = [[MusicplayerPlugin alloc] initWithChannel:channel];
     [registrar addMethodCallDelegate:instance channel:channel];
 }
@@ -20,6 +21,8 @@
         _commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
         [[_commandCenter playCommand] addTarget:self action:@selector(onPlayCommand:)];
         [[_commandCenter pauseCommand] addTarget:self action:@selector(onPauseCommand:)];
+        [[_commandCenter previousTrackCommand] addTarget:self action:@selector(onPreviousCommand:)];
+        [[_commandCenter nextTrackCommand] addTarget:self action:@selector(onNextCommand:)];
         if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"9.1")) {
             [[_commandCenter changePlaybackPositionCommand] addTarget:self action:@selector(onPlaybackPositionCommand:)];
         }
@@ -53,8 +56,24 @@
     return MPRemoteCommandHandlerStatusCommandFailed;
 }
 
+- (MPRemoteCommandHandlerStatus)onPreviousCommand:(MPRemoteCommandEvent *)event {
+    if ([self hasPrevious]) {
+        [self moveToPrevious];
+        return MPRemoteCommandHandlerStatusSuccess;
+    }
+    return MPRemoteCommandHandlerStatusCommandFailed;
+}
+
+- (MPRemoteCommandHandlerStatus)onNextCommand:(MPRemoteCommandEvent *)event {
+    if ([self hasNext]) {
+        [self moveToNext];
+        return MPRemoteCommandHandlerStatusSuccess;
+    }
+    return MPRemoteCommandHandlerStatusCommandFailed;
+}
+
 - (MPRemoteCommandHandlerStatus)onPlaybackPositionCommand:(MPChangePlaybackPositionCommandEvent *)event {
-    [_musicPlayer setPosition:(NSUInteger) (event.positionTime * 1000)];
+    [_musicPlayer setPosition:(int) (event.positionTime * 1000)];
     return MPRemoteCommandHandlerStatusSuccess;
 }
 
@@ -98,6 +117,14 @@
     } else if ([@"pause" isEqualToString:call.method]) {
         [self pause];
         result(@YES);
+    } else if ([@"getDuration" isEqualToString:call.method]) {
+        result(@([_musicPlayer getDuration] / 1000));
+    } else if ([@"getPosition" isEqualToString:call.method]) {
+        result(@([_musicPlayer getCurrentPosition] / 1000));
+    } else if ([@"setPosition" isEqualToString:call.method]) {
+        NSNumber *position = arguments[@"position"];
+        [_musicPlayer setPosition:(int) [position integerValue] * 1000];
+        result(@YES);
     } else if ([@"unbind" isEqualToString:call.method]) {
         result(@YES);
     } else {
@@ -124,7 +151,7 @@
                                        MPMediaItemPropertyArtist: titles[0],
                                        MPMediaItemPropertyArtwork: [[MPMediaItemArtwork alloc] initWithImage:image],
                                        MPMediaItemPropertyPlaybackDuration: @([self.musicPlayer getDuration] / 1000),
-                                       //MPNowPlayingInfoPropertyElapsedPlaybackTime: @([self.musicPlayer getCurrentPosition] / 1000),
+                                       MPNowPlayingInfoPropertyElapsedPlaybackTime: @([self.musicPlayer getCurrentPosition] / 1000),
                                        MPNowPlayingInfoPropertyPlaybackRate: @(1.0)
                                };
 
@@ -134,7 +161,7 @@
 
 - (void)playTracks:(NSString *)url :(NSArray<YoutubeTrack *> *)tracks :(NSUInteger)position {
     if ([_musicPlayer isPlaying]) {
-        [_musicPlayer pause];
+        [_musicPlayer stop];
     }
 
     if (_server == nil) {
@@ -160,6 +187,8 @@
 }
 
 - (void)onPreparing {
+    [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:nil];
+
     NSMutableDictionary *arguments = [NSMutableDictionary dictionary];
     arguments[@"tracks"] = [self getArgumentTracks];
     arguments[@"position"] = @([self getPosition]);
@@ -168,7 +197,7 @@
 }
 
 - (void)onPlay {
-    //[self setNowPlaying:[self getTracks][[self getPosition]] :YES];
+    [self setNowPlaying:[self getCurrentTrack]];
 
     NSMutableDictionary *arguments = [NSMutableDictionary dictionary];
     arguments[@"tracks"] = [self getArgumentTracks];
@@ -178,7 +207,7 @@
 }
 
 - (void)onPause {
-    //[self setNowPlaying:[self getTracks][[self getPosition]] :NO];
+    [self setNowPlaying:[self getCurrentTrack]];
 
     NSMutableDictionary *arguments = [NSMutableDictionary dictionary];
     arguments[@"tracks"] = [self getArgumentTracks];
@@ -189,13 +218,19 @@
 
 - (void)onPrepared {
     [self resume];
-    [self setNowPlaying:[self getTracks][[self getPosition]]];
 }
 
 - (void)onComplete {
     if ([self hasNext]) {
         [self moveToNext];
+    } else {
+        [_musicPlayer setPosition:0];
+        [self setNowPlaying:[self getCurrentTrack]];
     }
+}
+
+- (void)onSeekComplete {
+    [self setNowPlaying:[self getCurrentTrack]];
 }
 
 - (void)resume {
@@ -205,7 +240,6 @@
 
 - (void)pause {
     [_musicPlayer pause];
-    [self onPause];
 }
 
 - (void)onSuccess:(NSString *)url {
@@ -230,17 +264,37 @@
     return parsedTracks;
 }
 
+- (BOOL)hasPrevious {
+    @synchronized (self) {
+        return _currentTracks != nil && _currentPosition - 1 >= 0 && _currentPosition - 1 < [_currentTracks count];
+    }
+}
+
 - (BOOL)hasNext {
     @synchronized (self) {
         return _currentTracks != nil && _currentPosition + 1 > 0 && _currentPosition + 1 < [_currentTracks count];
     }
 }
 
+- (void)moveToPrevious {
+    @synchronized (self) {
+        if ([self hasPrevious]) {
+            [self playTracks:nil :_currentTracks :--_currentPosition];
+        }
+    }
+}
+
 - (void)moveToNext {
     @synchronized (self) {
         if ([self hasNext]) {
-            [self playTracks:nil :_currentTracks :_currentPosition + 1];
+            [self playTracks:nil :_currentTracks :++_currentPosition];
         }
+    }
+}
+
+- (YoutubeTrack *)getCurrentTrack {
+    @synchronized (self) {
+        return _currentTracks[_currentPosition];
     }
 }
 

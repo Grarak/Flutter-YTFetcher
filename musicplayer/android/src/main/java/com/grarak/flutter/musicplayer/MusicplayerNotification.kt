@@ -15,7 +15,7 @@ import com.grarak.flutter.musicplayer.musicplayer.R
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 
-class MusicPlayerNotification internal constructor(private val service: MusicplayerService) {
+class MusicplayerNotification internal constructor(private val service: MusicplayerService) {
     companion object {
         private const val NOTIFICATION_ID = 1
         private const val NOTIFICATION_CHANNEL = "music_channel"
@@ -115,8 +115,8 @@ class MusicPlayerNotification internal constructor(private val service: Musicpla
         mediaStyle.setShowActionsInCompactView(2)
 
         return NotificationCompat.Builder(service, NOTIFICATION_CHANNEL)
-                .setContentTitle(titleFormatted[0])
-                .setContentText(titleFormatted[1])
+                .setContentTitle(titleFormatted[1])
+                .setContentText(titleFormatted[0])
                 .setSubText(track.duration)
                 .setSmallIcon(R.drawable.ic_music_box)
                 .setLargeIcon(bitmap)
@@ -151,9 +151,9 @@ class MusicPlayerNotification internal constructor(private val service: Musicpla
     }
 
     private fun formatResultTitle(track: MusicTrack): Array<String?> {
-        val matcher = Pattern.compile("(.+)[:| -] (.+)").matcher(track.title)
+        val matcher = Pattern.compile("(.+)[:|-](.+)").matcher(track.title)
         if (matcher.matches()) {
-            return arrayOf(matcher.group(1), matcher.group(2))
+            return arrayOf(matcher.group(1).trim(), matcher.group(2).trim())
         }
 
         var title = track.title
