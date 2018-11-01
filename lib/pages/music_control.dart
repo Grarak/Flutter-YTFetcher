@@ -120,7 +120,9 @@ class _MusicControlPageState extends State<_MusicControlPage>
             itemCount: _tracks.length,
             controller: _pageController == null
                 ? _pageController = new PageController(
-                    initialPage: _currentPosition, viewportFraction: 0.75)
+                    initialPage: _currentPosition,
+                    viewportFraction: 0.75,
+                  )
                 : _pageController,
             onPageChanged: (int page) {
               if (page != _currentPosition) {
@@ -147,7 +149,8 @@ class _MusicControlPageState extends State<_MusicControlPage>
         children: <Widget>[
           new Expanded(
             child: new Center(
-              child: new _Seek(widget.musicplayer),
+              child:
+                  new _Seek(widget.musicplayer, _state == PlayingState.PLAYING),
             ),
             flex: 1,
           ),
@@ -290,8 +293,9 @@ class _MusicControlPageState extends State<_MusicControlPage>
 
 class _Seek extends StatefulWidget {
   final Musicplayer musicplayer;
+  final bool playing;
 
-  _Seek(this.musicplayer);
+  _Seek(this.musicplayer, this.playing);
 
   @override
   State<StatefulWidget> createState() {
@@ -306,29 +310,34 @@ class _SeekState extends State<_Seek> {
   bool onChanging = false;
 
   void startTimer() async {
-    if (_timer != null) {
-      _timer.cancel();
-    }
+    _timer?.cancel();
 
-    _duration = await widget.musicplayer.getDuration();
-    _position = await widget.musicplayer.getPosition();
-
-    _timer =
-        Timer.periodic(new Duration(milliseconds: 500), (Timer timer) async {
+    if (mounted) {
       int duration = await widget.musicplayer.getDuration();
       int position = await widget.musicplayer.getPosition();
 
-      if (mounted && !onChanging) {
-        setState(() {
-          _duration = duration;
-          _position = position;
-        });
-      }
-    });
+      setState(() {
+        _duration = duration;
+        _position = position;
+      });
+
+      _timer =
+          Timer.periodic(new Duration(milliseconds: 500), (Timer timer) async {
+        int duration = await widget.musicplayer.getDuration();
+        int position = await widget.musicplayer.getPosition();
+
+        if (mounted && !onChanging && widget.playing) {
+          setState(() {
+            _duration = duration;
+            _position = position;
+          });
+        }
+      });
+    }
   }
 
   void stopTimer() {
-    _timer.cancel();
+    _timer?.cancel();
     _timer = null;
   }
 

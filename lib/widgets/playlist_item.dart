@@ -7,8 +7,9 @@ class PlaylistItem extends StatefulWidget {
   final Playlist playlist;
   final Function() onTap;
   final Function(bool public) onPublicChange;
+  final Function() onDelete;
 
-  PlaylistItem(this.playlist, this.onTap, this.onPublicChange);
+  PlaylistItem(this.playlist, this.onTap, this.onPublicChange, this.onDelete);
 
   @override
   State<StatefulWidget> createState() {
@@ -22,7 +23,7 @@ class _PlaylistItemState extends State<PlaylistItem> {
     return new Card(
       child: InkWell(
         child: new Padding(
-          padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0),
           child: new Row(
             children: <Widget>[
               new Expanded(
@@ -50,6 +51,23 @@ class _PlaylistItemState extends State<PlaylistItem> {
                     widget.playlist.public = on;
                   });
                 },
+              ),
+              new PopupMenuButton<int>(
+                padding: EdgeInsets.zero,
+                icon: new Icon(Icons.more_vert),
+                onSelected: (int selection) {
+                  switch (selection) {
+                    case 0:
+                      widget.onDelete();
+                      break;
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuItem<int>>[
+                      new PopupMenuItem<int>(
+                        value: 0,
+                        child: new Text("Delete"),
+                      ),
+                    ],
               ),
             ],
           ),

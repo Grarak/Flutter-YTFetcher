@@ -27,3 +27,25 @@ Map<String, dynamic> _$PlaylistToJson(Playlist instance) {
   writeNotNull('public', instance.public);
   return val;
 }
+
+PlaylistId _$PlaylistIdFromJson(Map<String, dynamic> json) {
+  return PlaylistId(
+      apikey: json['apikey'] as String,
+      name: json['name'] as String,
+      id: json['id'] as String);
+}
+
+Map<String, dynamic> _$PlaylistIdToJson(PlaylistId instance) {
+  var val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('apikey', instance.apikey);
+  writeNotNull('name', instance.name);
+  writeNotNull('id', instance.id);
+  return val;
+}

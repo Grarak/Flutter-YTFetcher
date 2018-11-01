@@ -20,9 +20,31 @@ class Playlist {
     return _$PlaylistFromJson(json);
   }
 
+  Map<String, dynamic> toJson() {
+    return _$PlaylistToJson(this);
+  }
+
   @override
   String toString() {
-    return json.encode(_$PlaylistToJson(this));
+    return json.encode(toJson());
+  }
+}
+
+@JsonSerializable(includeIfNull: false)
+class PlaylistId {
+  String apikey;
+  String name;
+  String id;
+
+  PlaylistId({this.apikey, this.name, this.id});
+
+  factory PlaylistId.fromJson(Map<String, dynamic> json) {
+    return _$PlaylistIdFromJson(json);
+  }
+
+  @override
+  String toString() {
+    return json.encode(_$PlaylistIdToJson(this));
   }
 }
 
@@ -65,6 +87,25 @@ class PlaylistServer extends Server {
     return null;
   }
 
+  void create(Playlist playlist, onSuccess(), onError(int code, Object error)) {
+    post("users/playlist/create", playlist.toString(), (String response) {
+      onSuccess();
+    }, onError);
+  }
+
+  void delete(Playlist playlist, onSuccess(), onError(int code, Object error)) {
+    post("users/playlist/delete", playlist.toString(), (String response) {
+      onSuccess();
+    }, onError);
+  }
+
+  void addId(
+      PlaylistId playlistId, onSuccess(), onError(int code, Object error)) {
+    post("users/playlist/addid", playlistId.toString(), (String response) {
+      onSuccess();
+    }, onError);
+  }
+
   void listIds(Playlist playlist, onSuccess(List<String> ids),
       onError(int code, Object error)) {
     post("users/playlist/listids", playlist.toString(),
@@ -95,5 +136,23 @@ class PlaylistServer extends Server {
       return _parseListIds(name, cached);
     }
     return null;
+  }
+
+  void deleteId(
+      PlaylistId playlistId, onSuccess(), onError(int code, Object error)) {
+    post("users/playlist/deleteid", playlistId.toString(), (String response) {
+      onSuccess();
+    }, onError);
+  }
+
+  void setIds(Playlist playlist, List<String> ids, onSuccess(),
+      onError(int code, Object error)) {
+    Map<String, dynamic> data = playlist.toJson();
+    data["ids"] = ids;
+    data.remove("public");
+    print(json.encode(data));
+    post("users/playlist/setids", json.encode(data), (String response) {
+      onSuccess();
+    }, onError);
   }
 }

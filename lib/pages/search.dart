@@ -6,10 +6,14 @@ import '../api/youtube_server.dart';
 import '../widgets/input_bar.dart';
 import '../widgets/music.dart';
 import '../view_utils.dart' as viewUtils;
+import 'playlists.dart';
+import '../api/playlist_server.dart';
+import '../api/codes.dart' as codes;
 
-class SearchPage extends ParentPage<YoutubeServer> {
-  SearchPage(String apiKey, Musicplayer musicplayer, String host)
-      : super(apiKey, musicplayer, new YoutubeServer(host));
+class SearchPage extends ParentPage {
+  SearchPage(String apiKey, Musicplayer musicplayer, String host,
+      PlaylistController playlistController)
+      : super(apiKey, host, musicplayer, playlistController);
 
   @override
   State<StatefulWidget> createState() {
@@ -26,10 +30,10 @@ class _SearchPageState extends ParentPageState<SearchPage> {
 
     if (widgets.isEmpty) {
       widgets.add(new InputBar(Icons.search, (String text) {
-        widget.server.close();
+        widget.youtubeServer.close();
         showLoading = true;
 
-        widget.server
+        widget.youtubeServer
             .search(new Youtube(apikey: widget.apiKey, searchquery: text),
                 (List<YoutubeResult> results) {
           for (YoutubeResult result in results) {
@@ -38,10 +42,44 @@ class _SearchPageState extends ParentPageState<SearchPage> {
                 result,
                 horizontal: true,
                 onClick: () {
-                  widget.musicplayer.playTrack(
-                      widget.server.host, result.toTrack(widget.apiKey));
+                  widget.musicplayer
+                      .playTrack(widget.host, result.toTrack(widget.apiKey));
                 },
-                onAddPlaylist: () {},
+                onAddPlaylist: () {
+                  fetchPlaylist(
+                    false,
+                    (List<Playlist> playlists) {
+                      viewUtils.showListDialog(
+                        context,
+                        'Select playlist',
+                        List.generate(
+                          playlists.length,
+                          (int index) {
+                            return playlists[index].name;
+                          },
+                        ),
+                        (int selected) {
+                          widget.playlistServer.addId(
+                            new PlaylistId(
+                                apikey: widget.apiKey,
+                                name: playlists[selected].name,
+                                id: result.id),
+                            () {},
+                            (int code, Object error) {
+                              if (code == codes.PlaylistIdAlreadyExists) {
+                                viewUtils.showMessageDialog(
+                                    context, "Already in playlist!");
+                              } else {
+                                viewUtils.showMessageDialog(
+                                    context, "Server is not reachable!");
+                              }
+                            },
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
               ),
             );
           }

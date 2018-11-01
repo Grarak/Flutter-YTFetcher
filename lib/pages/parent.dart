@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:musicplayer/musicplayer.dart';
 
-import '../api/server.dart';
+import '../api/playlist_server.dart';
+import '../api/youtube_server.dart';
+import '../api/user_server.dart';
+import 'playlists.dart';
+import '../view_utils.dart' as viewUtils;
 
-abstract class ParentPage<S extends Server> extends StatefulWidget {
+abstract class ParentPage extends StatefulWidget {
   final String apiKey;
   final Musicplayer musicplayer;
-  final S server;
+  final PlaylistController playlistController;
+  final String host;
+  final PlaylistServer playlistServer;
+  final YoutubeServer youtubeServer;
+  final UserServer userServer;
 
-  ParentPage(this.apiKey, this.musicplayer, this.server, {Key key})
-      : super(key: key);
+  ParentPage(this.apiKey, this.host, this.musicplayer, this.playlistController,
+      {Key key})
+      : playlistServer = new PlaylistServer(host),
+        youtubeServer = new YoutubeServer(host),
+        userServer = new UserServer(host),
+        super(key: key);
 }
 
 abstract class ParentPageState<T extends ParentPage> extends State<T>
@@ -45,6 +57,28 @@ abstract class ParentPageState<T extends ParentPage> extends State<T>
       setState(() {
         _widgets = widgets;
       });
+    }
+  }
+
+  void fetchPlaylist(bool clearCache, onSuccess(List<Playlist> playlists)) {
+    widget.playlistServer.close();
+    if (clearCache) {
+      widget.playlistController.playlists.clear();
+    }
+
+    if (widget.playlistController.playlists.isEmpty) {
+      showLoading = true;
+      widget.playlistServer.list(widget.apiKey, (List<Playlist> playlists) {
+        widget.playlistController.playlists.clear();
+        widget.playlistController.playlists.addAll(playlists);
+        onSuccess(playlists);
+        showLoading = false;
+      }, (int code, Object error) {
+        viewUtils.showMessageDialog(context, "Server is not reachable!");
+        showLoading = false;
+      });
+    } else {
+      onSuccess(widget.playlistController.playlists);
     }
   }
 

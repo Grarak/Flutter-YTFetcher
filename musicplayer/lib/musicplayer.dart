@@ -57,7 +57,7 @@ class MusicTrack {
         formattedTitle = title.substring(0, firstWhitespace);
       }
     }
-    return [contentText, formattedTitle];
+    return [formattedTitle, contentText];
   }
 }
 

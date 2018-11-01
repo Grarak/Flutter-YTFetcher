@@ -229,7 +229,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             new Expanded(
               child: new Center(
-                child: new RaisedButton(
+                child: new CupertinoButton(
                   onPressed: onSwitchButtonPressed,
                   child: new Text(
                       signUp ? "Switch to login" : "Switch to sign up"),
@@ -259,10 +259,14 @@ class _Input extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new TextField(
-      decoration: new InputDecoration(labelText: name),
+      decoration: new InputDecoration(
+        labelText: name,
+      ),
       textInputAction: action,
       controller: controller,
       obscureText: secure,
+      autocorrect: false,
+      textCapitalization: TextCapitalization.none,
       focusNode: focusNode,
       onSubmitted: onSubmitted,
     );

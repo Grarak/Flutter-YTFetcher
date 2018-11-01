@@ -9,13 +9,21 @@ import '../widgets/input_bar.dart';
 import '../widgets/playlist_item.dart';
 import '../view_utils.dart' as viewUtils;
 import 'playlist_ids.dart';
+import '../api/codes.dart' as codes;
 
-class PlaylistsPage extends ParentPage<PlaylistServer> {
-  final YoutubeServer youtubeServer;
+class PlaylistController {
+  List<Playlist> _playlists = new List();
 
-  PlaylistsPage(String apiKey, Musicplayer musicplayer, String host)
-      : youtubeServer = new YoutubeServer(host),
-        super(apiKey, musicplayer, new PlaylistServer(host));
+  List<Playlist> get playlists => _playlists;
+}
+
+class PlaylistsPage extends ParentPage {
+  final YoutubeServer _youtubeServer;
+
+  PlaylistsPage(String apiKey, Musicplayer musicplayer, String host,
+      PlaylistController playlistController)
+      : _youtubeServer = new YoutubeServer(host),
+        super(apiKey, host, musicplayer, playlistController);
 
   @override
   State<StatefulWidget> createState() {
@@ -30,66 +38,104 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
 
     gridAxisCount = 1;
 
+    _reload();
+  }
+
+  void _reload() {
     if (widgets.isEmpty) {
-      widgets.add(new InputBar(Icons.add, (String text) {}, "New playlist"));
+      widgets.add(new InputBar(Icons.add, (String text) {
+        showLoading = true;
+        widget.playlistServer
+            .create(new Playlist(apikey: widget.apiKey, name: text), () {
+          widgets.clear();
+          showLoading = false;
+          _reload();
+        }, (int code, Object error) {
+          if (code == codes.PlaylistIdAlreadyExists) {
+            viewUtils.showMessageDialog(context, "Playlist already exists!");
+          } else {
+            viewUtils.showMessageDialog(context, "Server is not reachable!");
+          }
+          showLoading = false;
+        });
+      }, "New playlist"));
     }
 
     if (widgets.length == 1) {
-      showLoading = true;
-      widget.server.list(widget.apiKey, (List<Playlist> playlists) {
-        for (Playlist playlist in playlists) {
-          widgets.add(new PlaylistItem(playlist, () {
-            showLoading = true;
+      fetchPlaylist(
+        true,
+        (List<Playlist> playlists) {
+          for (Playlist playlist in playlists) {
+            widgets.add(new PlaylistItem(
+              playlist,
+              () {
+                showLoading = true;
 
-            playlist.apikey = widget.apiKey;
-            widget.server.listIds(playlist, (List<String> ids) {
-              List<Youtube> youtubes = new List();
-              for (String id in ids) {
-                youtubes.add(new Youtube(apikey: widget.apiKey, id: id));
-              }
-              widget.youtubeServer.getInfoList(youtubes,
-                  (List<YoutubeResult> results) {
-                showLoading = false;
+                playlist.apikey = widget.apiKey;
+                widget.playlistServer.listIds(
+                  playlist,
+                  (List<String> ids) {
+                    if (ids.isEmpty) {
+                      showLoading = false;
+                      viewUtils.showMessageDialog(
+                          context, "Playlist is empty!");
+                      return;
+                    }
 
-                Navigator.push(context,
-                    new CupertinoPageRoute(builder: (BuildContext context) {
-                  return new PlaylistIdsPage(playlist.name, results,
-                      (YoutubeResult result) {
-                    widget.musicplayer.playTrack(
-                        widget.server.host, result.toTrack(widget.apiKey));
-                  }, (List<YoutubeResult> results) {
-                    List<MusicTrack> shuffled = new List(results.length);
-                    for (int i = 0; i < results.length; i++) {
-                      shuffled[i] = results[i].toTrack(widget.apiKey);
+                    List<Youtube> youtubes = new List();
+                    for (String id in ids) {
+                      youtubes.add(new Youtube(apikey: widget.apiKey, id: id));
                     }
-                    shuffled.shuffle();
-                    widget.musicplayer
-                        .playTracks(widget.server.host, shuffled, 0);
-                  }, (List<YoutubeResult> results) {
-                    List<MusicTrack> shuffled = new List(results.length);
-                    for (int i = 0; i < results.length; i++) {
-                      shuffled[i] = results[i].toTrack(widget.apiKey);
-                    }
-                    widget.musicplayer
-                        .playTracks(widget.server.host, shuffled, 0);
+                    widget._youtubeServer.getInfoList(
+                      youtubes,
+                      (List<YoutubeResult> results) {
+                        showLoading = false;
+
+                        Navigator.push(context, new CupertinoPageRoute(
+                            builder: (BuildContext context) {
+                          return new PlaylistIds(
+                              widget.host,
+                              widget.musicplayer,
+                              widget.playlistController,
+                              playlist,
+                              results);
+                        }));
+                      },
+                      (int code, Object error) {
+                        viewUtils.showMessageDialog(
+                            context, "Server is not reachable!");
+                        showLoading = false;
+                      },
+                    );
+                  },
+                  (int code, Object error) {
+                    viewUtils.showMessageDialog(
+                        context, "Server is not reachable!");
+                    showLoading = false;
+                  },
+                );
+              },
+              (bool public) {},
+              () {
+                viewUtils.showOptionsDialog(
+                    context, "Delete ${playlist.name}?", null, () {
+                  showLoading = true;
+                  playlist.apikey = widget.apiKey;
+                  widget.playlistServer.delete(playlist, () {
+                    widgets.clear();
+                    showLoading = false;
+                    _reload();
+                  }, (int code, Object error) {
+                    viewUtils.showMessageDialog(
+                        context, "Server is not reachable!");
+                    showLoading = false;
                   });
-                }));
-              }, (int code, Object error) {
-                viewUtils.showMessageDialog(
-                    context, "Server is not reachable!");
-                showLoading = false;
-              });
-            }, (int code, Object error) {
-              viewUtils.showMessageDialog(context, "Server is not reachable!");
-              showLoading = false;
-            });
-          }, (bool public) {}));
-        }
-        showLoading = false;
-      }, (int code, Object error) {
-        viewUtils.showMessageDialog(context, "Server is not reachable!");
-        showLoading = false;
-      });
+                });
+              },
+            ));
+          }
+        },
+      );
     }
   }
 }

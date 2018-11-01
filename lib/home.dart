@@ -23,12 +23,14 @@ class Home extends StatelessWidget {
   final Musicplayer musicplayer = new Musicplayer();
 
   Home(String apiKey, this.host) {
-    items.add(new NavigationItem(
-        "Front", Icons.home, new FrontPage(apiKey, musicplayer, host)));
+    PlaylistController controller = new PlaylistController();
+
+    items.add(new NavigationItem("Front", Icons.home,
+        new FrontPage(apiKey, musicplayer, host, controller)));
     items.add(new NavigationItem("Playlists", Icons.playlist_play,
-        new PlaylistsPage(apiKey, musicplayer, host)));
-    items.add(new NavigationItem(
-        "Search", Icons.search, new SearchPage(apiKey, musicplayer, host)));
+        new PlaylistsPage(apiKey, musicplayer, host, controller)));
+    items.add(new NavigationItem("Search", Icons.search,
+        new SearchPage(apiKey, musicplayer, host, controller)));
   }
 
   @override

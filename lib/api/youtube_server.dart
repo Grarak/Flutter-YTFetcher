@@ -124,20 +124,36 @@ class YoutubeServer extends Server {
   void getInfoList(List<Youtube> youtubes,
       onSuccess(List<YoutubeResult> results), onError(int code, Object error)) {
     Map<String, YoutubeResult> mappedResults = new Map();
-    for (Youtube youtube in youtubes) {
-      getInfo(youtube, (YoutubeResult result) {
-        mappedResults[result.id] = result;
-        if (mappedResults.length == youtubes.length) {
-          List<YoutubeResult> results = new List();
-          for (Youtube youtube in youtubes) {
-            results.add(mappedResults[youtube.id]);
+
+    Function() callback = () {
+      if (mappedResults.length == youtubes.length) {
+        List<YoutubeResult> results = new List();
+        for (Youtube youtube in youtubes) {
+          YoutubeResult result = mappedResults[youtube.id];
+          if (result != null) {
+            results.add(result);
           }
-          onSuccess(results);
         }
-      }, (int code, Object error) {
-        close();
-        onError(code, error);
-      });
+        onSuccess(results);
+      }
+    };
+
+    for (Youtube youtube in youtubes) {
+      getInfo(
+        youtube,
+        (YoutubeResult result) {
+          mappedResults[result.id] = result;
+          callback();
+        },
+        (int code, Object error) {
+          String key = youtube.id;
+          while (mappedResults.containsKey(key)) {
+            key += "1";
+          }
+          mappedResults[key] = null;
+          callback();
+        },
+      );
     }
   }
 

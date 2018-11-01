@@ -1,6 +1,5 @@
 #import <CloudKit/CloudKit.h>
 #import "MusicplayerPlugin.h"
-#import "VersionUtils.h"
 #import "SDWebImageDownloader.h"
 
 @implementation MusicplayerPlugin
@@ -8,7 +7,6 @@
     FlutterMethodChannel *channel = [FlutterMethodChannel
             methodChannelWithName:@"musicplayer"
                   binaryMessenger:[registrar messenger]];
-    NSLog(@"initialize");
     MusicplayerPlugin *instance = [[MusicplayerPlugin alloc] initWithChannel:channel];
     [registrar addMethodCallDelegate:instance channel:channel];
 }
@@ -23,7 +21,7 @@
         [[_commandCenter pauseCommand] addTarget:self action:@selector(onPauseCommand:)];
         [[_commandCenter previousTrackCommand] addTarget:self action:@selector(onPreviousCommand:)];
         [[_commandCenter nextTrackCommand] addTarget:self action:@selector(onNextCommand:)];
-        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"9.1")) {
+        if (@available(iOS 9.1, *)) {
             [[_commandCenter changePlaybackPositionCommand] addTarget:self action:@selector(onPlaybackPositionCommand:)];
         }
     }
