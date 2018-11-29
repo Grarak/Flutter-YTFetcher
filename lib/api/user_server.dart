@@ -1,6 +1,9 @@
-import 'server.dart';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:json_annotation/json_annotation.dart';
+
+import 'server.dart';
 
 part 'user_server.g.dart';
 
@@ -27,13 +30,15 @@ class UserServer extends Server {
 
   void signUp(
       User user, onSuccess(User user), onError(int code, Object error)) {
-    post("users/signup", user.toString(), (String response) {
+    post("users/signup", user.toString(),
+        (HttpHeaders headers, String response) {
       onSuccess(User.fromJson(response));
     }, onError);
   }
 
   void login(User user, onSuccess(User user), onError(int code, Object error)) {
-    post("users/login", user.toString(), (String response) {
+    post("users/login", user.toString(),
+        (HttpHeaders headers, String response) {
       onSuccess(User.fromJson(response));
     }, onError);
   }

@@ -5,16 +5,16 @@ import 'package:musicplayer/musicplayer.dart';
 import 'pages/front.dart';
 import 'pages/playlists.dart';
 import 'pages/search.dart';
+import 'pages/downloads.dart';
 import 'pages/music_control.dart';
 import 'view_utils.dart' as viewUtils;
 import 'widgets/music_bar.dart';
 
 class NavigationItem {
-  String title;
   IconData icon;
   Widget widget;
 
-  NavigationItem(this.title, this.icon, this.widget);
+  NavigationItem(this.icon, this.widget);
 }
 
 class Home extends StatelessWidget {
@@ -25,12 +25,42 @@ class Home extends StatelessWidget {
   Home(String apiKey, this.host) {
     PlaylistController controller = new PlaylistController();
 
-    items.add(new NavigationItem("Front", Icons.home,
-        new FrontPage(apiKey, musicplayer, host, controller)));
-    items.add(new NavigationItem("Playlists", Icons.playlist_play,
-        new PlaylistsPage(apiKey, musicplayer, host, controller)));
-    items.add(new NavigationItem("Search", Icons.search,
-        new SearchPage(apiKey, musicplayer, host, controller)));
+    items.add(new NavigationItem(
+        Icons.home,
+        new FrontPage(
+          apiKey,
+          host,
+          musicplayer,
+          controller,
+          key: new PageStorageKey("Front"),
+        )));
+    items.add(new NavigationItem(
+        Icons.playlist_play,
+        new PlaylistsPage(
+          apiKey,
+          host,
+          musicplayer,
+          controller,
+          key: new PageStorageKey("Playlists"),
+        )));
+    items.add(new NavigationItem(
+        Icons.search,
+        new SearchPage(
+          apiKey,
+          host,
+          musicplayer,
+          controller,
+          key: new PageStorageKey("Search"),
+        )));
+    items.add(new NavigationItem(
+        Icons.cloud_download,
+        new DownloadsPage(
+          apiKey,
+          host,
+          musicplayer,
+          controller,
+          key: new PageStorageKey("Downloads"),
+        )));
   }
 
   @override
@@ -119,7 +149,7 @@ class _HomePageState extends State<HomePage> implements MusicListener {
             NavigationItem item = widget.items[index];
             return new BottomNavigationBarItem(
               icon: new Icon(item.icon),
-              title: new Text(item.title),
+              title: new Text((item.widget.key as PageStorageKey).value),
             );
           },
         ),

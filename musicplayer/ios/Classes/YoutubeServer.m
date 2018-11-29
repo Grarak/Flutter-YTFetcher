@@ -60,9 +60,9 @@
     return self;
 }
 
-- (BOOL)onConnect:(Request *)request :(NSInteger)status {
+- (BOOL)onConnect:(Request *)request :(NSInteger)status :(NSString *)url {
     if (status >= 200 && status < 300) {
-        [_delegate onSuccess:_url];
+        [_delegate onSuccess:url];
     } else {
         [_server verifyForwardedSong:[self buildUrl] :_delegate];
     }
@@ -109,13 +109,13 @@
     return self;
 }
 
-- (BOOL)onConnect:(Request *)request :(NSInteger)status {
+- (BOOL)onConnect:(Request *)request :(NSInteger)status :(NSString *)url {
     if (status >= 200 && status < 300) {
-        [_delegate onSuccess:_url];
+        [_delegate onSuccess:url];
     } else {
         [_delegate onFailure:ServerOffline];
     }
-    return false;
+    return NO;
 }
 
 - (void)onSuccess:(Request *)request :(NSString *)response :(NSDictionary *)headers {

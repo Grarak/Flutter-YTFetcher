@@ -16,6 +16,9 @@ import com.google.android.exoplayer2.audio.AudioAttributes
 import com.grarak.flutter.musicplayer.network.Status
 import com.grarak.flutter.musicplayer.network.Youtube
 import com.grarak.flutter.musicplayer.network.YoutubeServer
+import io.flutter.util.PathUtils
+import java.io.File
+import java.nio.file.Path
 import java.util.*
 
 class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, ExoPlayerWrapper.OnPlayerListener {
@@ -161,6 +164,13 @@ class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, E
         youtube.id = track.id
         youtube.addhistory = true
         youtubeServer.url = url
+
+        val file = File(PathUtils.getDataDirectory(this), youtube.id + ".ogg")
+        if (file.exists()) {
+            exoPlayer.setFile(file)
+            return
+        }
+
         youtubeServer.fetchSong(youtube, object : YoutubeServer.YoutubeSongIdCallback {
             override fun onSuccess(url: String) {
                 exoPlayer.setUrl(url)

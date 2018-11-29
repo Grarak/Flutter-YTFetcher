@@ -22,10 +22,10 @@
 }
 
 - (BOOL)onConnect:(Request *)request :(NSInteger)status :(NSString *)url {
-    if ([_delegate respondsToSelector:@selector(onConnect::)]) {
-        return [_delegate onConnect:request :status];
+    if ([_delegate respondsToSelector:@selector(onConnect:::)]) {
+        return [_delegate onConnect:request :status :url];
     }
-    return true;
+    return YES;
 }
 
 - (void)onSuccess:(Request *)request :(NSInteger)status :(NSDictionary *)headers :(NSData *)response {

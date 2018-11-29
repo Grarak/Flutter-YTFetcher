@@ -174,6 +174,18 @@ class Musicplayer {
         .invokeMethod("setPosition", <String, dynamic>{"position": position});
   }
 
+  Future<MusicTrack> getCurrentTrack() async {
+    Map<dynamic, dynamic> args = await _channel.invokeMethod("getCurrentTrack");
+    if (args == null) {
+      return null;
+    }
+    Map<String, dynamic> json = new Map();
+    args.forEach((dynamic key, dynamic value) {
+      json[key] = value;
+    });
+    return MusicTrack.fromJson(json);
+  }
+
   Future<dynamic> unbind() async {
     return _channel.invokeMethod("unbind");
   }

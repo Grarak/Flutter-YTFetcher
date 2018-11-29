@@ -24,4 +24,6 @@
 
 - (NSString *)to_string;
 
+- (NSDictionary<NSString *, NSString *> *)to_dictionary;
+
 @end

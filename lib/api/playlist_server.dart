@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
 
 import 'package:json_annotation/json_annotation.dart';
 
@@ -54,7 +55,7 @@ class PlaylistServer extends Server {
   void list(String apiKey, onSuccess(List<Playlist> playlists),
       onError(int code, Object error)) {
     post("users/playlist/list", "{\"apikey\":\"$apiKey\"}",
-        (String response) async {
+        (HttpHeaders headers, String response) async {
       onSuccess(await _parseList(response));
     }, (int code, Object error) async {
       List<Playlist> list = await _parseList(null);
@@ -88,20 +89,23 @@ class PlaylistServer extends Server {
   }
 
   void create(Playlist playlist, onSuccess(), onError(int code, Object error)) {
-    post("users/playlist/create", playlist.toString(), (String response) {
+    post("users/playlist/create", playlist.toString(),
+        (HttpHeaders headers, String response) {
       onSuccess();
     }, onError);
   }
 
   void delete(Playlist playlist, onSuccess(), onError(int code, Object error)) {
-    post("users/playlist/delete", playlist.toString(), (String response) {
+    post("users/playlist/delete", playlist.toString(),
+        (HttpHeaders headers, String response) {
       onSuccess();
     }, onError);
   }
 
   void addId(
       PlaylistId playlistId, onSuccess(), onError(int code, Object error)) {
-    post("users/playlist/addid", playlistId.toString(), (String response) {
+    post("users/playlist/addid", playlistId.toString(),
+        (HttpHeaders headers, String response) {
       onSuccess();
     }, onError);
   }
@@ -109,7 +113,7 @@ class PlaylistServer extends Server {
   void listIds(Playlist playlist, onSuccess(List<String> ids),
       onError(int code, Object error)) {
     post("users/playlist/listids", playlist.toString(),
-        (String response) async {
+        (HttpHeaders headers, String response) async {
       onSuccess(await _parseListIds(playlist.name, response));
     }, (int code, Object error) async {
       List<String> list = await _parseListIds(playlist.name, null);
@@ -140,7 +144,8 @@ class PlaylistServer extends Server {
 
   void deleteId(
       PlaylistId playlistId, onSuccess(), onError(int code, Object error)) {
-    post("users/playlist/deleteid", playlistId.toString(), (String response) {
+    post("users/playlist/deleteid", playlistId.toString(),
+        (HttpHeaders headers, String response) {
       onSuccess();
     }, onError);
   }
@@ -151,7 +156,8 @@ class PlaylistServer extends Server {
     data["ids"] = ids;
     data.remove("public");
     print(json.encode(data));
-    post("users/playlist/setids", json.encode(data), (String response) {
+    post("users/playlist/setids", json.encode(data),
+        (HttpHeaders headers, String response) {
       onSuccess();
     }, onError);
   }

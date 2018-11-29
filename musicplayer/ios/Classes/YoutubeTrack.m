@@ -46,12 +46,7 @@
 }
 
 - (NSString *)to_string {
-    NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
-    dictionary[@"apiKey"] = _apiKey;
-    dictionary[@"title"] = _title;
-    dictionary[@"id"] = _youtubeId;
-    dictionary[@"thumbnail"] = _thumbnail;
-    dictionary[@"duration"] = _duration;
+    NSDictionary *dictionary = [self to_dictionary];
 
     NSError *error;
     NSData *data = [NSJSONSerialization dataWithJSONObject:dictionary options:0 error:&error];
@@ -60,4 +55,15 @@
     }
     return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
+
+- (NSDictionary<NSString *, NSString *> *)to_dictionary {
+    NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
+    dictionary[@"apiKey"] = _apiKey;
+    dictionary[@"title"] = _title;
+    dictionary[@"id"] = _youtubeId;
+    dictionary[@"thumbnail"] = _thumbnail;
+    dictionary[@"duration"] = _duration;
+    return dictionary;
+}
+
 @end

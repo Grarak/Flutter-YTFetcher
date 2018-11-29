@@ -6,9 +6,16 @@ enum Method { GET, POST }
 class Request {
   HttpClient client;
 
-  Request(Method method, Uri uri, Map<String, String> headers, String data,
-      void onSuccess(int code, String response), void onError(Object error)) {
-    _start(method, uri, headers, data, onSuccess, onError);
+  Request(
+      Method method,
+      Uri uri,
+      Map<String, String> headers,
+      String data,
+      onSuccess(HttpHeaders headers, int code, String response),
+      onError(Object error),
+      {bool onConnect(int status, Uri uri)}) {
+    _start(method, uri, headers, data, onSuccess, onError,
+        onConnect: onConnect);
   }
 
   void _start(
@@ -16,8 +23,9 @@ class Request {
       Uri uri,
       Map<String, String> headers,
       String data,
-      void onSuccess(int code, String response),
-      void onError(Object error)) async {
+      void onSuccess(HttpHeaders headers, int code, String response),
+      void onError(Object error),
+      {bool onConnect(int status, Uri uri)}) async {
     if (client != null) {
       close();
     }
@@ -54,10 +62,15 @@ class Request {
           if (newUrl == null) {
             onError(null);
           } else {
-            _start(
-                method, Uri.parse(newUrl), headers, data, onSuccess, onError);
+            _start(method, Uri.parse(newUrl), headers, data, onSuccess, onError,
+                onConnect: onConnect);
           }
           return;
+      }
+
+      if (onConnect != null && !onConnect(response.statusCode, uri)) {
+        close();
+        return;
       }
 
       List<int> content = new List();
@@ -68,7 +81,8 @@ class Request {
         onError(error);
       }, onDone: () {
         close();
-        onSuccess(response.statusCode, String.fromCharCodes(content));
+        onSuccess(response.headers, response.statusCode,
+            String.fromCharCodes(content));
       }, cancelOnError: true);
     });
   }

@@ -74,7 +74,7 @@ abstract class ParentPageState<T extends ParentPage> extends State<T>
         onSuccess(playlists);
         showLoading = false;
       }, (int code, Object error) {
-        viewUtils.showMessageDialog(context, "Server is not reachable!");
+        viewUtils.showServerNoReachable(context);
         showLoading = false;
       });
     } else {
@@ -82,11 +82,15 @@ abstract class ParentPageState<T extends ParentPage> extends State<T>
     }
   }
 
+  Widget buildLoadingWidget() {
+    return new CircularProgressIndicator();
+  }
+
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
       body: widgets.isEmpty || _showLoading
-          ? new Center(child: new CircularProgressIndicator())
+          ? new Center(child: buildLoadingWidget())
           : _gridAxisCount <= 1
               ? ListView(
                   children: _widgets,

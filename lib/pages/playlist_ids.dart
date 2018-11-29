@@ -9,6 +9,7 @@ import 'parent.dart';
 import 'playlists.dart';
 import '../view_utils.dart' as viewUtils;
 import '../api/playlist_server.dart';
+import '../download_manager.dart';
 
 class PlaylistIds extends StatelessWidget {
   final String host;
@@ -105,6 +106,18 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
             rightSide: new Row(
               children: <Widget>[
                 new FloatingActionButton(
+                  heroTag: "download",
+                  onPressed: () async {
+                    DownloadManager downloadManager =
+                        await DownloadManager.instance;
+                    for (YoutubeResult result in widget.results) {
+                      downloadManager.queue(result);
+                    }
+                  },
+                  child: new Icon(Icons.file_download),
+                  mini: true,
+                ),
+                new FloatingActionButton(
                   heroTag: "shuffle",
                   onPressed: () {
                     List<MusicTrack> shuffled = List.generate(
@@ -160,7 +173,7 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
                           new PopupMenuButton<int>(
                             padding: EdgeInsets.zero,
                             icon: new Icon(Icons.more_vert),
-                            onSelected: (int selection) {
+                            onSelected: (int selection) async {
                               switch (selection) {
                                 case 0:
                                   setState(() {
@@ -190,6 +203,14 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
                                     });
                                   }
                                   break;
+                                case 3:
+                                  DownloadManager downloadManager =
+                                      await DownloadManager.instance;
+                                  if (!downloadManager.queue(item)) {
+                                    viewUtils.showMessageDialog(
+                                        context, "Already downloaded");
+                                  }
+                                  break;
                               }
                             },
                             itemBuilder: (BuildContext context) =>
@@ -205,6 +226,10 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
                                   new PopupMenuItem(
                                     value: 2,
                                     child: new Text("Move down"),
+                                  ),
+                                  new PopupMenuItem(
+                                    value: 3,
+                                    child: new Text("Download"),
                                   ),
                                 ],
                           ),

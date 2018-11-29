@@ -28,17 +28,38 @@ class LifecycleEventHandler extends WidgetsBindingObserver {
   }
 }
 
+void showServerNoReachable(BuildContext context) {
+  showMessageDialog(context, "Server is not reachable!");
+}
+
 void showMessageDialog(BuildContext context, String message) {
   showDialog(
     context: context,
+    barrierDismissible: false,
     builder: (BuildContext context) {
       if (Platform.isIOS) {
         return new CupertinoAlertDialog(
           title: new Text(message),
+          actions: <Widget>[
+            new CupertinoDialogAction(
+              child: new Text("OK"),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
         );
       } else {
         return new AlertDialog(
-          title: new Text(message),
+          content: new Text(message),
+          actions: <Widget>[
+            new FlatButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: new Text("OK"),
+            ),
+          ],
         );
       }
     },
@@ -49,6 +70,7 @@ void showOptionsDialog(
     BuildContext context, String message, onCancel(), onOk()) {
   showDialog(
     context: context,
+    barrierDismissible: false,
     builder: (BuildContext context) {
       if (Platform.isIOS) {
         return new CupertinoAlertDialog(
@@ -59,35 +81,43 @@ void showOptionsDialog(
               isDefaultAction: true,
               onPressed: () {
                 Navigator.pop(context, false);
-                onCancel();
+                if (onCancel != null) {
+                  onCancel();
+                }
               },
             ),
             new CupertinoDialogAction(
-              child: new Text("Ok"),
+              child: new Text("OK"),
               isDestructiveAction: true,
               onPressed: () {
                 Navigator.pop(context, false);
-                onOk();
+                if (onOk != null) {
+                  onOk();
+                }
               },
             ),
           ],
         );
       } else {
         return new AlertDialog(
-          title: new Text(message),
+          content: new Text(message),
           actions: <Widget>[
             new FlatButton(
-              child: new Text("Cancel"),
+              child: new Text("CANCEL"),
               onPressed: () {
                 Navigator.pop(context, false);
-                onCancel();
+                if (onCancel != null) {
+                  onCancel();
+                }
               },
             ),
             new FlatButton(
-              child: new Text("Ok"),
+              child: new Text("OK"),
               onPressed: () {
                 Navigator.pop(context, false);
-                onOk();
+                if (onOk != null) {
+                  onOk();
+                }
               },
             )
           ],

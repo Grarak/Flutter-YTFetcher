@@ -8,11 +8,13 @@ import 'parent.dart';
 import 'playlists.dart';
 import '../api/playlist_server.dart';
 import '../api/codes.dart' as codes;
+import '../download_manager.dart';
 
 class FrontPage extends ParentPage {
-  FrontPage(String apiKey, Musicplayer musicplayer, String host,
-      PlaylistController playlistController)
-      : super(apiKey, host, musicplayer, playlistController);
+  FrontPage(String apiKey, String host, Musicplayer musicplayer,
+      PlaylistController playlistController,
+      {Key key})
+      : super(apiKey, host, musicplayer, playlistController, key: key);
 
   @override
   State<StatefulWidget> createState() {
@@ -26,56 +28,68 @@ class _FrontPageState extends ParentPageState<FrontPage> {
     super.initState();
 
     if (widgets.isEmpty) {
-      widget.youtubeServer.getCharts(new Youtube(apikey: widget.apiKey),
-          (List<YoutubeResult> results) {
-        widgets = List.generate(results.length, (int index) {
-          return new Music(
-            results[index],
-            horizontal: false,
-            onClick: () async {
-              await widget.musicplayer.playTrack(widget.youtubeServer.host,
-                  results[index].toTrack(widget.apiKey));
-            },
-            onAddPlaylist: () {
-              fetchPlaylist(
-                false,
-                (List<Playlist> playlists) {
-                  viewUtils.showListDialog(
-                    context,
-                    'Select playlist',
-                    List.generate(
-                      playlists.length,
-                      (int index) {
-                        return playlists[index].name;
-                      },
-                    ),
-                    (int selected) {
-                      widget.playlistServer.addId(
-                        new PlaylistId(
-                            apikey: widget.apiKey,
-                            name: playlists[selected].name,
-                            id: results[index].id),
-                        () {},
-                        (int code, Object error) {
-                          if (code == codes.PlaylistIdAlreadyExists) {
-                            viewUtils.showMessageDialog(
-                                context, "Already in playlist!");
-                          } else {
-                            viewUtils.showMessageDialog(
-                                context, "Server is not reachable!");
-                          }
+      widget.youtubeServer.getCharts(
+        new Youtube(apikey: widget.apiKey),
+        (List<YoutubeResult> results) {
+          widgets = List.generate(
+            results.length,
+            (int index) {
+              return new Music(
+                results[index],
+                horizontal: false,
+                onClick: () async {
+                  await widget.musicplayer.playTrack(widget.youtubeServer.host,
+                      results[index].toTrack(widget.apiKey));
+                },
+                onAddPlaylist: () {
+                  fetchPlaylist(
+                    false,
+                    (List<Playlist> playlists) {
+                      viewUtils.showListDialog(
+                        context,
+                        'Select playlist',
+                        List.generate(
+                          playlists.length,
+                          (int index) {
+                            return playlists[index].name;
+                          },
+                        ),
+                        (int selected) {
+                          widget.playlistServer.addId(
+                            new PlaylistId(
+                                apikey: widget.apiKey,
+                                name: playlists[selected].name,
+                                id: results[index].id),
+                            () {},
+                            (int code, Object error) {
+                              if (code == codes.PlaylistIdAlreadyExists) {
+                                viewUtils.showMessageDialog(
+                                    context, "Already in playlist!");
+                              } else {
+                                viewUtils.showServerNoReachable(context);
+                              }
+                            },
+                          );
                         },
                       );
                     },
                   );
                 },
+                onDownload: () async {
+                  DownloadManager downloadManager =
+                      await DownloadManager.instance;
+                  if (!downloadManager.queue(results[index])) {
+                    viewUtils.showMessageDialog(context, "Already downloaded");
+                  }
+                },
               );
             },
           );
-        });
-      }, (int code, Object error) {
-        viewUtils.showMessageDialog(context, "Server is not reachable!");
-      });
+        },
+        (int code, Object error) {
+          viewUtils.showServerNoReachable(context);
+        },
+      );
     }
   }
 }

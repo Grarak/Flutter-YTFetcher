@@ -8,9 +8,14 @@ class Music extends StatelessWidget {
   final bool horizontal;
   final Function() onClick;
   final Function() onAddPlaylist;
+  final Function() onDownload;
 
   Music(this.result,
-      {Key key, this.horizontal = false, this.onClick, this.onAddPlaylist})
+      {Key key,
+      this.horizontal = false,
+      this.onClick,
+      this.onAddPlaylist,
+      this.onDownload})
       : super(key: key);
 
   Widget _buildImage() {
@@ -20,10 +25,10 @@ class Music extends StatelessWidget {
         elevation: 4.0,
         shape: new RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(4.0))),
-        child: Ink.image(
-          image: CachedNetworkImageProvider(result.thumbnail),
+        child: new Ink.image(
+          image: new CachedNetworkImageProvider(result.thumbnail),
           fit: BoxFit.cover,
-          child: InkWell(
+          child: new InkWell(
             onTap: () {
               if (onClick != null) {
                 onClick();
@@ -46,12 +51,21 @@ class Music extends StatelessWidget {
               onAddPlaylist();
             }
             break;
+          case 1:
+            if (onDownload != null) {
+              onDownload();
+            }
+            break;
         }
       },
       itemBuilder: (BuildContext context) => <PopupMenuItem<int>>[
-            PopupMenuItem<int>(
+            new PopupMenuItem<int>(
               value: 0,
               child: new Text("Add to playlist"),
+            ),
+            new PopupMenuItem(
+              value: 1,
+              child: new Text("Download"),
             ),
           ],
     );

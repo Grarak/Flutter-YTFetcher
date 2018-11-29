@@ -12,36 +12,63 @@ class Server {
 
   Server(this.host);
 
-  void get(String path, onSuccess(String response),
-      onError(int code, Object error)) {
-    _doRequest(Method.GET, path, null, onSuccess, onError);
+  Uri buildUri(String path) {
+    return Uri.parse("$host/api/$_API_VERSION/$path");
   }
 
-  void post(String path, String data, onSuccess(String response),
-      onError(int code, Object error)) {
-    _doRequest(Method.POST, path, data, onSuccess, onError);
+  void get(String path, onSuccess(HttpHeaders headers, String response),
+      onError(int code, Object error),
+      {bool onConnect(int status, Uri uri)}) {
+    getUri(buildUri(path), onSuccess, onError, onConnect: onConnect);
   }
 
-  void _doRequest(Method method, String path, String data,
-      onSuccess(String response), onError(int code, Object error)) {
+  void getUri(Uri url, onSuccess(HttpHeaders headers, String response),
+      onError(int code, Object error),
+      {bool onConnect(int status, Uri uri)}) {
+    _doRequest(Method.GET, url, null, onSuccess, onError, onConnect: onConnect);
+  }
+
+  void post(
+      String path,
+      String data,
+      onSuccess(HttpHeaders headers, String response),
+      onError(int code, Object error),
+      {bool onConnect(int status, Uri uri)}) {
+    postUri(buildUri(path), data, onSuccess, onError, onConnect: onConnect);
+  }
+
+  void postUri(
+      Uri uri,
+      String data,
+      onSuccess(HttpHeaders headers, String response),
+      onError(int code, Object error),
+      {bool onConnect(int status, Uri uri)}) {
+    _doRequest(Method.POST, uri, data, onSuccess, onError,
+        onConnect: onConnect);
+  }
+
+  void _doRequest(
+      Method method,
+      Uri uri,
+      String data,
+      onSuccess(HttpHeaders headers, String response),
+      onError(int code, Object error),
+      {bool onConnect(int status, Uri uri)}) {
     Map<String, String> headers = new Map();
     if (data != null) {
       headers["content-type"] = "application/json";
     }
-    requests.addLast(new Request(
-        method,
-        Uri.parse(host + "/api/" + _API_VERSION + "/" + path),
-        headers,
-        data, (int code, String response) {
+    requests.addLast(new Request(method, uri, headers, data,
+        (HttpHeaders headers, int code, String response) {
       if (code == HttpStatus.ok) {
-        onSuccess(response);
+        onSuccess(headers, response);
       } else {
         int code = codes.getStatusCode(response);
         onError(code == null ? codes.Unknown : code, null);
       }
     }, (Object error) {
       onError(codes.Unknown, error);
-    }));
+    }, onConnect: onConnect));
   }
 
   void close() {

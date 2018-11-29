@@ -4,10 +4,13 @@ class InputBar extends StatelessWidget {
   final IconData _icon;
   final Function(String text) onSubmit;
   final String hint;
+  final String text;
 
   final TextEditingController textController = new TextEditingController();
 
-  InputBar(this._icon, this.onSubmit, this.hint);
+  InputBar(this._icon, this.onSubmit, this.hint, {this.text}) {
+    textController.text = text;
+  }
 
   @override
   Widget build(BuildContext context) {

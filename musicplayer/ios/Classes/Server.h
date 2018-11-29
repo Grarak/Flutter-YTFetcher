@@ -10,7 +10,7 @@
 
 @protocol ServerDelegate <NSObject>
 @optional
-- (BOOL)onConnect:(Request *)request :(NSInteger)status;
+- (BOOL)onConnect:(Request *)request :(NSInteger)status :(NSString *) url;
 
 @required
 - (void)onSuccess:(Request *)request :(NSString *)response :(NSDictionary *)headers;

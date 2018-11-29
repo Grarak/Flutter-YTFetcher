@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
 
 import 'package:json_annotation/json_annotation.dart';
 import 'package:musicplayer/musicplayer.dart';
@@ -36,10 +37,19 @@ class YoutubeResult {
   YoutubeResult({this.title, this.id, this.thumbnail, this.duration});
 
   factory YoutubeResult.fromString(String data) =>
-      _$YoutubeResultFromJson(json.decode(data));
+      YoutubeResult.fromJson(json.decode(data));
 
-  factory YoutubeResult.fromJson(Map<String, dynamic> j) =>
-      _$YoutubeResultFromJson(j);
+  factory YoutubeResult.fromJson(Map<String, dynamic> j) {
+    YoutubeResult youtubeResult = _$YoutubeResultFromJson(j);
+    List<int> bytes = new List();
+    for (int i = 0; i < youtubeResult.title.length; i++) {
+      bytes.add(youtubeResult.title.codeUnitAt(i));
+    }
+    try {
+      youtubeResult.title = utf8.decode(bytes);
+    } on FormatException catch (_) {}
+    return youtubeResult;
+  }
 
   @override
   String toString() {
@@ -54,18 +64,26 @@ class YoutubeResult {
 class YoutubeServer extends Server {
   YoutubeServer(String host) : super(host);
 
-  void getCharts(Youtube youtube, onSuccess(List<YoutubeResult> results),
-      onError(int code, Object error)) {
-    post("youtube/getcharts", youtube.toString(), (String response) async {
-      onSuccess(await _parseCharts(response));
-    }, (int code, Object error) async {
-      List<YoutubeResult> results = await _parseCharts(null);
-      if (results == null) {
-        onError(code, error);
-      } else {
-        onSuccess(results);
-      }
-    });
+  void getCharts(
+    Youtube youtube,
+    onSuccess(List<YoutubeResult> results),
+    onError(int code, Object error),
+  ) {
+    post(
+      "youtube/getcharts",
+      youtube.toString(),
+      (HttpHeaders headers, String response) async {
+        onSuccess(await _parseCharts(response));
+      },
+      (int code, Object error) async {
+        List<YoutubeResult> results = await _parseCharts(null);
+        if (results == null) {
+          onError(code, error);
+        } else {
+          onSuccess(results);
+        }
+      },
+    );
   }
 
   Future<List<YoutubeResult>> _parseCharts(String response) async {
@@ -89,26 +107,38 @@ class YoutubeServer extends Server {
     return null;
   }
 
-  void getInfo(Youtube youtube, onSuccess(YoutubeResult result),
-      onError(int code, Object error)) async {
-    YoutubeResult result = await _parseInfo(youtube.id, null);
+  void getInfo(
+    Youtube youtube,
+    onSuccess(YoutubeResult result),
+    onError(int code, Object error),
+  ) async {
+    YoutubeResult result = await parseInfo(youtube.id, null);
     if (result != null) {
       onSuccess(result);
       return;
     }
-    post("youtube/getinfo", youtube.toString(), (String response) async {
-      onSuccess(await _parseInfo(youtube.id, response));
-    }, (int code, Object error) async {
-      YoutubeResult result = await _parseInfo(youtube.id, null);
-      if (result == null) {
-        onError(code, error);
-      } else {
-        onSuccess(result);
-      }
-    });
+    post(
+      "youtube/getinfo",
+      youtube.toString(),
+      (HttpHeaders headers, String response) async {
+        onSuccess(await parseInfo(youtube.id, response));
+      },
+      (int code, Object error) async {
+        YoutubeResult result = await parseInfo(youtube.id, null);
+        if (result == null) {
+          onError(code, error);
+        } else {
+          onSuccess(result);
+        }
+      },
+    );
   }
 
-  Future<YoutubeResult> _parseInfo(String id, String response) async {
+  static void saveResult(YoutubeResult result) {
+    Settings.saveString("resultId_${result.id}", result.toString());
+  }
+
+  static Future<YoutubeResult> parseInfo(String id, String response) async {
     if (response != null) {
       Settings.saveString("resultId_$id", response);
       return YoutubeResult.fromString(response);
@@ -116,13 +146,16 @@ class YoutubeServer extends Server {
 
     String cached = await Settings.getString("resultId_$id", null);
     if (cached != null) {
-      return _parseInfo(id, cached);
+      return parseInfo(id, cached);
     }
     return null;
   }
 
-  void getInfoList(List<Youtube> youtubes,
-      onSuccess(List<YoutubeResult> results), onError(int code, Object error)) {
+  void getInfoList(
+    List<Youtube> youtubes,
+    onSuccess(List<YoutubeResult> results),
+    onError(int code, Object error),
+  ) {
     Map<String, YoutubeResult> mappedResults = new Map();
 
     Function() callback = () {
@@ -157,15 +190,93 @@ class YoutubeServer extends Server {
     }
   }
 
-  void search(Youtube youtube, onSuccess(List<YoutubeResult> results),
-      onError(int code, Object error)) {
-    post("youtube/search", youtube.toString(), (String response) {
-      List<YoutubeResult> results = new List();
-      List<dynamic> unparsedResults = json.decode(response);
-      for (dynamic result in unparsedResults) {
-        results.add(YoutubeResult.fromJson(result));
-      }
-      onSuccess(results);
-    }, onError);
+  void search(
+    Youtube youtube,
+    onSuccess(List<YoutubeResult> results),
+    onError(int code, Object error),
+  ) {
+    post(
+      "youtube/search",
+      youtube.toString(),
+      (HttpHeaders headers, String response) {
+        List<YoutubeResult> results = new List();
+        List<dynamic> unparsedResults = json.decode(response);
+        for (dynamic result in unparsedResults) {
+          results.add(YoutubeResult.fromJson(result));
+        }
+        onSuccess(results);
+      },
+      onError,
+    );
+  }
+
+  void fetchSong(
+    Youtube youtube,
+    onSuccess(String url),
+    onError(int code, Object error),
+  ) {
+    post(
+      "youtube/fetch",
+      youtube.toString(),
+      (HttpHeaders headers, String response) {
+        String id = headers.value("ytfetcher-id");
+        if (id == null) {
+          onSuccess(response);
+        } else {
+          _verifyFetchedSong(response, id, onSuccess, onError);
+        }
+      },
+      onError,
+    );
+  }
+
+  void _verifyFetchedSong(
+    String url,
+    String id,
+    onSuccess(String url),
+    onError(int code, Object error),
+  ) {
+    getUri(
+      Uri.parse(url),
+      (HttpHeaders headers, String response) {},
+      (int code, Object error) {
+        _verifyForwardedSong(url, id, onSuccess, onError);
+      },
+      onConnect: (int status, Uri uri) {
+        if (status == HttpStatus.ok) {
+          onSuccess(uri.toString());
+        } else {
+          _verifyForwardedSong(uri.toString(), id, onSuccess, onError);
+        }
+        return false;
+      },
+    );
+  }
+
+  void _verifyForwardedSong(
+    String url,
+    String id,
+    onSuccess(String response),
+    onError(int code, Object error),
+  ) {
+    Uri uri = buildUri("youtube/get").replace(
+      queryParameters: {
+        "id": id,
+        "url": url,
+      },
+    );
+    getUri(
+      uri,
+      (HttpHeaders headers, String response) {},
+      onError,
+      onConnect: (int status, Uri uri) {
+        if (status == HttpStatus.ok) {
+          onSuccess(uri.toString());
+        } else {
+          onError(status, null);
+        }
+        return false;
+      },
+    );
   }
 }

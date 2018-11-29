@@ -90,6 +90,18 @@ class MusicplayerPlugin private constructor(private val context: Context,
                 })
                 result.success(null)
             }
+            call.method == "getCurrentTrack" -> {
+                executeCall(Runnable {
+                    service!!.run {
+                        val tracks = getTracks()
+                        if (tracks.isEmpty() || trackPosition >= tracks.size) {
+                            result.success(null)
+                        } else {
+                            result.success(getTracks()[trackPosition].toMap())
+                        }
+                    }
+                })
+            }
             call.method == "unbind" -> {
                 unbind()
                 result.success(null)

@@ -123,6 +123,14 @@
         NSNumber *position = arguments[@"position"];
         [_musicPlayer setPosition:(int) [position integerValue] * 1000];
         result(@YES);
+    } else if ([@"getCurrentTrack" isEqualToString:call.method]) {
+        @synchronized (self) {
+            if (_currentTracks.count == 0 || _currentPosition >= _currentTracks.count) {
+                result(NULL);
+            } else {
+                result([_currentTracks[_currentPosition] to_dictionary]);
+            }
+        }
     } else if ([@"unbind" isEqualToString:call.method]) {
         result(@YES);
     } else {

@@ -130,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
           viewUtils.showMessageDialog(context, "Invalid username or password");
           break;
         default:
-          viewUtils.showMessageDialog(context, "Server is not reachable!");
+          viewUtils.showServerNoReachable(context);
           break;
       }
     };
