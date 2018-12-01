@@ -20,26 +20,31 @@
 }
 
 - (void)ogvPlayerDidLoadMetadata:(OGVPlayerView *)sender {
+    NSLog(@"ogvPlayerDidLoadMetadata");
     [_musicPlayerDelegate onPrepared];
 }
 
 - (void)ogvPlayerDidPlay:(OGVPlayerView *)sender {
+    NSLog(@"ogvPlayerDidPlay");
     [self setState:Playing];
     [_musicPlayerDelegate onPlay];
 }
 
 - (void)ogvPlayerDidPause:(OGVPlayerView *)sender {
+    NSLog(@"ogvPlayerDidPause");
     if ([self getState] == Paused) {
         [_musicPlayerDelegate onPause];
     }
 }
 
 - (void)ogvPlayerDidEnd:(OGVPlayerView *)sender {
+    NSLog(@"ogvPlayerDidEnd");
     [self setState:Idle];
     [_musicPlayerDelegate onComplete];
 }
 
 - (void)ogvPlayerDidSeek:(OGVPlayerView *)sender {
+    NSLog(@"ogvPlayerDidSeek");
     _position = -1;
     [self setState:[self getPreviousState]];
     [_musicPlayerDelegate onSeekComplete];

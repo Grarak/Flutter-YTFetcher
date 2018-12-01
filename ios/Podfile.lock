@@ -60,7 +60,7 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
-  - Flutter (from `.symlinks/flutter/ios-release`)
+  - Flutter (from `.symlinks/flutter/ios`)
   - musicplayer (from `.symlinks/plugins/musicplayer/ios`)
   - OGVKit/Ogg/Vorbis (from `https://github.com/Grarak/OGVKit.git`)
   - OGVKit/WebM (from `https://github.com/Grarak/OGVKit.git`)
@@ -80,7 +80,7 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   Flutter:
-    :path: ".symlinks/flutter/ios-release"
+    :path: ".symlinks/flutter/ios"
   musicplayer:
     :path: ".symlinks/plugins/musicplayer/ios"
   OGVKit:

@@ -133,7 +133,7 @@ NSString *GetMusicplayerDirectoryOfType(NSSearchPathDirectory dir) {
 }
 
 - (void)setNowPlaying:(YoutubeTrack *)track {
-    if (track == nil) {
+    if (!track) {
         [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:nil];
         return;
     }
@@ -141,12 +141,16 @@ NSString *GetMusicplayerDirectoryOfType(NSSearchPathDirectory dir) {
     SDWebImageDownloader *downloader = [SDWebImageDownloader sharedDownloader];
     [downloader downloadImageWithURL:[
                     NSURL URLWithString:[track thumbnail]]
-                             options:SDWebImageDownloaderContinueInBackground
+                             options:SDWebImageDownloaderLowPriority
+                                     | SDWebImageDownloaderUseNSURLCache
+                                     | SDWebImageDownloaderScaleDownLargeImages
                             progress:^(NSInteger receivedSize, NSInteger expectedSize, NSURL *_Nullable targetURL) {
                             }
                            completed:^(UIImage *_Nullable image, NSData *_Nullable data, NSError *_Nullable error, BOOL finished) {
                                if (!image) {
-                                   image = [UIImage imageNamed:@"music_placeholder"];
+                                   NSBundle *bundle = [NSBundle bundleForClass:[self class]];
+                                   image = [UIImage imageNamed:@"music_placeholder.png"
+                                                      inBundle:bundle compatibleWithTraitCollection:nil];
                                }
 
                                NSArray<NSString *> *titles = [track getFormattedTitles];
@@ -168,13 +172,13 @@ NSString *GetMusicplayerDirectoryOfType(NSSearchPathDirectory dir) {
     [_musicPlayer stop];
 
     if (_server == nil) {
-        if (url == nil) {
+        if (!url) {
             return;
         }
         _server = [[YoutubeServer alloc] initWithUrl:url];
     } else {
         [_server close];
-        if (url != nil) {
+        if (url) {
             [_server setUrl:url];
         }
     }
@@ -236,6 +240,7 @@ NSString *GetMusicplayerDirectoryOfType(NSSearchPathDirectory dir) {
         [self moveToNext];
     } else {
         [_musicPlayer setPosition:0];
+        [self pause];
         [self setNowPlaying:[self getCurrentTrack]];
     }
 }

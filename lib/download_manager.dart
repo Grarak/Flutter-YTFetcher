@@ -61,6 +61,10 @@ class Download {
       return;
     }
 
+    if (_downloadFile.existsSync()) {
+      _downloadFile.createSync();
+    }
+
     server?.close();
     server = new YoutubeServer(host);
     server.fetchSong(
