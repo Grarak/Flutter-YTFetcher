@@ -43,7 +43,12 @@ class _DownloadsPageState extends ParentPageState<DownloadsPage>
 
   @override
   Widget buildLoadingWidget() {
-    return initialized ? new Text("No downloads") : super.buildLoadingWidget();
+    return initialized
+        ? new Text(
+            "No downloads",
+            style: new TextStyle(fontSize: 16.0),
+          )
+        : super.buildLoadingWidget();
   }
 
   void initDownloads() async {

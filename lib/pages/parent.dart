@@ -87,19 +87,19 @@ abstract class ParentPageState<T extends ParentPage> extends State<T>
     return new CupertinoActivityIndicator();
   }
 
+  Widget buildChildren() {
+    return widgets.isEmpty || _showLoading
+        ? new Center(child: buildLoadingWidget())
+        : _gridAxisCount <= 1
+            ? ListView(children: _widgets)
+            : new GridView.count(
+                crossAxisCount: _gridAxisCount,
+                children: _widgets,
+              );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      body: widgets.isEmpty || _showLoading
-          ? new Center(child: buildLoadingWidget())
-          : _gridAxisCount <= 1
-              ? ListView(
-                  children: _widgets,
-                )
-              : new GridView.count(
-                  crossAxisCount: _gridAxisCount,
-                  children: _widgets,
-                ),
-    );
+    return new Scaffold(body: buildChildren());
   }
 }
