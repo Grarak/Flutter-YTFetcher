@@ -305,16 +305,16 @@ class _Seek extends StatefulWidget {
 
 class _SeekState extends State<_Seek> {
   Timer _timer;
-  int _duration = 0;
-  int _position = 0;
+  double _duration = 0;
+  double _position = 0;
   bool onChanging = false;
 
   void startTimer() async {
     _timer?.cancel();
 
     if (mounted) {
-      int duration = await widget.musicplayer.getDuration();
-      int position = await widget.musicplayer.getPosition();
+      double duration = await widget.musicplayer.getDuration();
+      double position = await widget.musicplayer.getPosition();
 
       setState(() {
         _duration = duration;
@@ -323,8 +323,8 @@ class _SeekState extends State<_Seek> {
 
       _timer =
           Timer.periodic(new Duration(milliseconds: 500), (Timer timer) async {
-        int duration = await widget.musicplayer.getDuration();
-        int position = await widget.musicplayer.getPosition();
+        double duration = await widget.musicplayer.getDuration();
+        double position = await widget.musicplayer.getPosition();
 
         if (mounted && !onChanging && widget.playing) {
           setState(() {
@@ -367,8 +367,8 @@ class _SeekState extends State<_Seek> {
     return new Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        new Text(
-            "${utils.fromSeconds(_position)}/${utils.fromSeconds(_duration)}"),
+        new Text("${utils.fromSeconds(_position.toInt())}/"
+            "${utils.fromSeconds(_duration.toInt())}"),
         new Slider(
           value: _position.toDouble(),
           onChangeStart: (double position) {
@@ -376,12 +376,12 @@ class _SeekState extends State<_Seek> {
           },
           onChanged: (double position) {
             setState(() {
-              _position = position.toInt();
+              _position = position;
             });
           },
           onChangeEnd: (double position) {
             onChanging = false;
-            widget.musicplayer.setPosition(position.toInt());
+            widget.musicplayer.setPosition(position);
           },
           max: _duration.toDouble(),
           min: 0.0,

@@ -32,7 +32,7 @@ typedef NS_ENUM(NSInteger, MusicPlayerState) {
     OGVPlayerView *_playerView;
     MusicPlayerState _currentState;
     MusicPlayerState _previousState;
-    int _position;
+    float _position;
 }
 
 @property(weak, readonly, nonatomic) id <MusicPlayerDelegate> musicPlayerDelegate;
@@ -53,9 +53,9 @@ typedef NS_ENUM(NSInteger, MusicPlayerState) {
 
 - (BOOL)isPlaying;
 
-- (int)getCurrentPosition;
+- (float)getCurrentPosition;
 
-- (int)getDuration;
+- (float)getDuration;
 
-- (void)setPosition:(int)position;
+- (void)setPosition:(float)position;
 @end

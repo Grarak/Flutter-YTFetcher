@@ -99,18 +99,20 @@
     return [self getState] == Playing;
 }
 
-- (int)getCurrentPosition {
-    return _position == -1 ? (int) ([_playerView playbackPosition] * 1000) : _position;
+- (float)getCurrentPosition {
+    float pos=  _position == -1 ? [_playerView playbackPosition] : _position;
+    NSLog(@"%f", pos);
+    return pos;
 }
 
-- (int)getDuration {
-    return (int) (_playerView.duration * 1000);
+- (float)getDuration {
+    return _playerView.duration;
 }
 
-- (void)setPosition:(int)position {
+- (void)setPosition:(float)position {
     [self setState:Seeking];
     _position = position;
-    [_playerView seek:position / 1000];
+    [_playerView seek:position];
 }
 
 - (MusicPlayerState)getState {

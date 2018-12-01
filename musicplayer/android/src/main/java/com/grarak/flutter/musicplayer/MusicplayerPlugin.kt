@@ -75,18 +75,18 @@ class MusicplayerPlugin private constructor(private val context: Context,
             }
             call.method == "getDuration" -> {
                 executeCall(Runnable {
-                    result.success(service!!.duration / 1000)
+                    result.success(service!!.duration)
                 })
             }
             call.method == "getPosition" -> {
                 executeCall(Runnable {
-                    result.success(service!!.currentPosition / 1000)
+                    result.success(service!!.currentPosition)
                 })
             }
             call.method == "setPosition" -> {
-                val position = call.argument<Int>("position")
+                val position = call.argument<Double>("position")
                 executeCall(Runnable {
-                    service!!.seekTo(position!!.toLong() * 1000)
+                    service!!.seekTo(position!!.toFloat())
                 })
                 result.success(null)
             }

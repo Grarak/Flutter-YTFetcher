@@ -49,7 +49,7 @@ class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, E
     private var preparing: Boolean = false
     var trackPosition = -1
         private set
-    private var lastMusicPosition: Long = 0
+    private var lastMusicPosition: Float = .0f
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -91,10 +91,10 @@ class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, E
             return exoPlayer.isPlaying && trackPosition >= 0
         }
 
-    val currentPosition: Long
+    val currentPosition: Float
         get() = exoPlayer.currentPosition
 
-    val duration: Long
+    val duration: Float
         get() = exoPlayer.duration
 
     val isPreparing: Boolean
@@ -147,7 +147,7 @@ class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, E
         synchronized(trackLock) {
             preparing = true
             trackPosition = position
-            lastMusicPosition = 0
+            lastMusicPosition = .0f
             if (this.tracks !== tracks) {
                 this.tracks.clear()
                 this.tracks.addAll(tracks)
@@ -222,7 +222,7 @@ class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, E
         }
     }
 
-    fun seekTo(position: Long) {
+    fun seekTo(position: Float) {
         lastMusicPosition = position
         exoPlayer.seekTo(position)
     }
@@ -258,7 +258,7 @@ class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, E
             if (moveOn()) {
                 playMusic(youtubeServer.url, tracks, trackPosition + 1)
             } else {
-                lastMusicPosition = 0
+                lastMusicPosition = .0f
             }
         }
     }

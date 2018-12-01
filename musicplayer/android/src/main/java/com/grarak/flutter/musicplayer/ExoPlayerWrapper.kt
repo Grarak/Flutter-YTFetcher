@@ -25,11 +25,11 @@ class ExoPlayerWrapper(context: Context) : Player.EventListener {
 
     var onPlayerListener: OnPlayerListener? = null
 
-    val currentPosition: Long
-        get() = exoPlayer.currentPosition
+    val currentPosition: Float
+        get() = (exoPlayer.currentPosition / 1000).toFloat()
 
-    val duration: Long
-        get() = exoPlayer.duration
+    val duration: Float
+        get() = (exoPlayer.duration / 1000).toFloat()
 
     val isPlaying: Boolean
         get() = getState() == State.PLAYING
@@ -76,8 +76,8 @@ class ExoPlayerWrapper(context: Context) : Player.EventListener {
         exoPlayer.prepare(mediaSource, true, true)
     }
 
-    fun seekTo(position: Long) {
-        exoPlayer.seekTo(position)
+    fun seekTo(position: Float) {
+        exoPlayer.seekTo((position * 1000).toLong())
     }
 
     fun setAudioAttributes(audioAttributes: AudioAttributes) {
@@ -117,7 +117,7 @@ class ExoPlayerWrapper(context: Context) : Player.EventListener {
                 setState(State.IDLE)
                 onPlayerListener?.onPrepared(this)
             }
-            Player.STATE_ENDED -> if (playWhenReady && (duration == 0L || currentPosition != 0L)) {
+            Player.STATE_ENDED -> if (playWhenReady && (duration == .0f || currentPosition != .0f)) {
                 setState(State.IDLE)
                 onPlayerListener?.onCompletion(this)
             }

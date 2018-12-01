@@ -161,15 +161,15 @@ class Musicplayer {
     return _channel.invokeMethod("pause");
   }
 
-  Future<int> getDuration() async {
+  Future<double> getDuration() async {
     return await _channel.invokeMethod("getDuration");
   }
 
-  Future<int> getPosition() async {
+  Future<double> getPosition() async {
     return await _channel.invokeMethod("getPosition");
   }
 
-  Future<dynamic> setPosition(int position) async {
+  Future<dynamic> setPosition(double position) async {
     return _channel
         .invokeMethod("setPosition", <String, dynamic>{"position": position});
   }

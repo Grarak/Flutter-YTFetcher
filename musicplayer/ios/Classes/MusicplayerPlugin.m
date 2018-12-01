@@ -66,7 +66,7 @@ NSString *GetMusicplayerDirectoryOfType(NSSearchPathDirectory dir) {
 }
 
 - (MPRemoteCommandHandlerStatus)onPlaybackPositionCommand:(MPChangePlaybackPositionCommandEvent *)event {
-    [_musicPlayer setPosition:(int) (event.positionTime * 1000)];
+    [_musicPlayer setPosition:(float) event.positionTime];
     [self setNowPlaying:[self getCurrentTrack]];
     return MPRemoteCommandHandlerStatusSuccess;
 }
@@ -106,12 +106,12 @@ NSString *GetMusicplayerDirectoryOfType(NSSearchPathDirectory dir) {
         [self pause];
         result(@YES);
     } else if ([@"getDuration" isEqualToString:call.method]) {
-        result(@([_musicPlayer getDuration] / 1000));
+        result(@([_musicPlayer getDuration]));
     } else if ([@"getPosition" isEqualToString:call.method]) {
-        result(@([_musicPlayer getCurrentPosition] / 1000));
+        result(@([_musicPlayer getCurrentPosition]));
     } else if ([@"setPosition" isEqualToString:call.method]) {
         NSNumber *position = arguments[@"position"];
-        [_musicPlayer setPosition:(int) [position integerValue] * 1000];
+        [_musicPlayer setPosition:[position floatValue]];
         result(@YES);
     } else if ([@"getCurrentTrack" isEqualToString:call.method]) {
         @synchronized (self) {
@@ -155,12 +155,15 @@ NSString *GetMusicplayerDirectoryOfType(NSSearchPathDirectory dir) {
 
                                NSArray<NSString *> *titles = [track getFormattedTitles];
 
+                               float duration = [self->_musicPlayer getDuration];
+                               float position = [self->_musicPlayer getCurrentPosition];
+
                                NSDictionary *info = @{
                                        MPMediaItemPropertyTitle: titles[1],
                                        MPMediaItemPropertyArtist: titles[0],
                                        MPMediaItemPropertyArtwork: [[MPMediaItemArtwork alloc] initWithImage:image],
-                                       MPMediaItemPropertyPlaybackDuration: @([self.musicPlayer getDuration] / 1000),
-                                       MPNowPlayingInfoPropertyElapsedPlaybackTime: @([self.musicPlayer getCurrentPosition] / 1000),
+                                       MPMediaItemPropertyPlaybackDuration: @(duration),
+                                       MPNowPlayingInfoPropertyElapsedPlaybackTime: @(position),
                                        MPNowPlayingInfoPropertyPlaybackRate: @(1.0)
                                };
 
