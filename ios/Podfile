@@ -58,8 +58,8 @@ target 'Runner' do
     pod p[:name], :path => File.join(symlink, 'ios')
   }
 
-  pod 'OGVKit/WebM', :git => 'https://github.com/Grarak/OGVKit.git'
-  pod 'OGVKit/Ogg/Vorbis', :git => 'https://github.com/Grarak/OGVKit.git'
+  pod 'OGVKit/WebM', :git => 'https://github.com/Grarak/OGVKit.git', :submodules => true
+  pod 'OGVKit/Ogg/Vorbis', :git => 'https://github.com/Grarak/OGVKit.git', :submodules => true
 end
 
 post_install do |installer|

@@ -85,6 +85,7 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/musicplayer/ios"
   OGVKit:
     :git: https://github.com/Grarak/OGVKit.git
+    :submodules: true
   path_provider:
     :path: ".symlinks/plugins/path_provider/ios"
   shared_preferences:
@@ -94,6 +95,7 @@ CHECKOUT OPTIONS:
   OGVKit:
     :commit: 4eeb89555a38b8a1a9e0af0860238bd5ae064bee
     :git: https://github.com/Grarak/OGVKit.git
+    :submodules: true
 
 SPEC CHECKSUMS:
   Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
@@ -109,6 +111,6 @@ SPEC CHECKSUMS:
   SDWebImage: 624d6e296c69b244bcede364c72ae0430ac14681
   shared_preferences: 5a1d487c427ee18fcd3ea1f2a131569481834b53
 
-PODFILE CHECKSUM: 5c8973c7f5297b5a5aa4c8ea5f7a7dfb95c924d2
+PODFILE CHECKSUM: e262a4d21ba74377e0657e3f9012d7187420e19d
 
 COCOAPODS: 1.6.0.beta.1
