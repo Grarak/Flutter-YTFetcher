@@ -21,33 +21,28 @@
 
 - (void)ogvPlayerDidLoadMetadata:(OGVPlayerView *)sender {
     [_musicPlayerDelegate onPrepared];
-    NSLog(@"ogvPlayerDidLoadMetadata");
 }
 
 - (void)ogvPlayerDidPlay:(OGVPlayerView *)sender {
     [self setState:Playing];
     [_musicPlayerDelegate onPlay];
-    NSLog(@"ogvPlayerDidPlay");
 }
 
 - (void)ogvPlayerDidPause:(OGVPlayerView *)sender {
     if ([self getState] == Paused) {
         [_musicPlayerDelegate onPause];
     }
-    NSLog(@"ogvPlayerDidPause");
 }
 
 - (void)ogvPlayerDidEnd:(OGVPlayerView *)sender {
     [self setState:Idle];
     [_musicPlayerDelegate onComplete];
-    NSLog(@"ogvPlayerDidEnd");
 }
 
 - (void)ogvPlayerDidSeek:(OGVPlayerView *)sender {
     _position = -1;
     [self setState:[self getPreviousState]];
     [_musicPlayerDelegate onSeekComplete];
-    NSLog(@"ogvPlayerDidSeek");
 }
 
 - (void)setSession {
