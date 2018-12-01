@@ -4,7 +4,7 @@
 
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
-#import <MobileVLCKit/MobileVLCKit.h>
+#import <OGVKit/OGVKit.h>
 
 typedef NS_ENUM(NSInteger, MusicPlayerState) {
     Preparing,
@@ -18,6 +18,8 @@ typedef NS_ENUM(NSInteger, MusicPlayerState) {
 
 - (void)onPrepared;
 
+- (void)onPlay;
+
 - (void)onPause;
 
 - (void)onComplete;
@@ -26,16 +28,20 @@ typedef NS_ENUM(NSInteger, MusicPlayerState) {
 
 @end
 
-@interface MusicPlayerWrapper : NSObject <VLCMediaPlayerDelegate> {
-    VLCMediaPlayer *_mediaPlayer;
+@interface MusicPlayerWrapper : NSObject <OGVPlayerDelegate> {
+    OGVPlayerView *_playerView;
     MusicPlayerState _currentState;
+    MusicPlayerState _previousState;
+    int _position;
 }
 
 @property(weak, readonly, nonatomic) id <MusicPlayerDelegate> musicPlayerDelegate;
 
 - (id)initWithDelegate:(id <MusicPlayerDelegate>)delegate;
 
-- (void)setUrl:(NSString *)url;
+- (void)setUrl:(NSURL *)url;
+
+- (void)setFile:(NSString *)path;
 
 - (void)play;
 

@@ -3,53 +3,51 @@
 //
 
 #import "MusicPlayerWrapper.h"
+#import <math.h>
 
 @implementation MusicPlayerWrapper
 
 - (id)initWithDelegate:(id <MusicPlayerDelegate>)delegate {
     self = [super init];
     if (self) {
-        _mediaPlayer = [[VLCMediaPlayer alloc] init];
-        _mediaPlayer.delegate = self;
+        _playerView = [[OGVPlayerView alloc] init];
+        _playerView.delegate = self;
         _currentState = Idle;
         _musicPlayerDelegate = delegate;
+        _position = -1;
     }
     return self;
 }
 
-- (void)mediaPlayerStateChanged:(NSNotification *)aNotification {
-    switch ([self getState]) {
-        case Preparing:
-            if (_mediaPlayer.willPlay && [self getDuration] != 0) {
-                [self setState:Idle];
-                [_mediaPlayer pause];
-                [_musicPlayerDelegate onPrepared];
-            }
-            break;
-        case Playing:
-            if (_mediaPlayer.isPlaying) {
-                [self setState:Idle];
-            }
-            break;
-        case Paused:
-            if (_mediaPlayer.state == VLCMediaPlayerStatePaused) {
-                [self setState:Idle];
-                [_musicPlayerDelegate onPause];
-            }
-            break;
-        case Seeking:
-            if (_mediaPlayer.state == VLCMediaPlayerStateBuffering) {
-                [self setState:Idle];
-                [_musicPlayerDelegate onSeekComplete];
-            }
-            break;
-        case Idle:
-            break;
-    }
+- (void)ogvPlayerDidLoadMetadata:(OGVPlayerView *)sender {
+    [_musicPlayerDelegate onPrepared];
+    NSLog(@"ogvPlayerDidLoadMetadata");
+}
 
-    if (_mediaPlayer.state == VLCMediaPlayerStateEnded) {
-        [_musicPlayerDelegate onComplete];
+- (void)ogvPlayerDidPlay:(OGVPlayerView *)sender {
+    [self setState:Playing];
+    [_musicPlayerDelegate onPlay];
+    NSLog(@"ogvPlayerDidPlay");
+}
+
+- (void)ogvPlayerDidPause:(OGVPlayerView *)sender {
+    if ([self getState] == Paused) {
+        [_musicPlayerDelegate onPause];
     }
+    NSLog(@"ogvPlayerDidPause");
+}
+
+- (void)ogvPlayerDidEnd:(OGVPlayerView *)sender {
+    [self setState:Idle];
+    [_musicPlayerDelegate onComplete];
+    NSLog(@"ogvPlayerDidEnd");
+}
+
+- (void)ogvPlayerDidSeek:(OGVPlayerView *)sender {
+    _position = -1;
+    [self setState:[self getPreviousState]];
+    [_musicPlayerDelegate onSeekComplete];
+    NSLog(@"ogvPlayerDidSeek");
 }
 
 - (void)setSession {
@@ -65,27 +63,32 @@
     }
 }
 
-- (void)setUrl:(NSString *)url {
-    [self stop];
+- (void)setUrl:(NSURL *)url {
+    [_playerView pause];
     [self setState:Preparing];
-    _mediaPlayer.media = [VLCMedia mediaWithURL:[NSURL URLWithString:url]];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self->_playerView.inputStream = [OGVInputStream inputStreamWithURL:url];
+    });
     [self setSession];
-    [_mediaPlayer play];
+}
+
+- (void)setFile:(NSString *)path {
+    [self setUrl:[NSURL fileURLWithPath:path]];
 }
 
 - (void)play {
     [self setState:Playing];
     [self setSession];
-    [_mediaPlayer play];
+    [_playerView play];
 }
 
 - (void)pause {
     [self setState:Paused];
-    [_mediaPlayer pause];
+    [_playerView pause];
 }
 
 - (void)stop {
-    [_mediaPlayer stop];
+    [_playerView pause];
 }
 
 - (BOOL)isPreparing {
@@ -93,20 +96,21 @@
 }
 
 - (BOOL)isPlaying {
-    return _mediaPlayer.isPlaying;
+    return [self getState] == Playing;
 }
 
 - (int)getCurrentPosition {
-    return _mediaPlayer.time.intValue;
+    return _position == -1 ? (int) ([_playerView playbackPosition] * 1000) : _position;
 }
 
 - (int)getDuration {
-    return [[_mediaPlayer media] length].intValue;
+    return (int) (_playerView.duration * 1000);
 }
 
 - (void)setPosition:(int)position {
     [self setState:Seeking];
-    [_mediaPlayer setTime:[VLCTime timeWithInt:position]];
+    _position = position;
+    [_playerView seek:position / 1000];
 }
 
 - (MusicPlayerState)getState {
@@ -115,8 +119,15 @@
     }
 }
 
+- (MusicPlayerState)getPreviousState {
+    @synchronized (self) {
+        return _previousState;
+    }
+}
+
 - (void)setState:(MusicPlayerState)state {
     @synchronized (self) {
+        _previousState = _currentState;
         _currentState = state;
     }
 }

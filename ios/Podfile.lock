@@ -1,10 +1,56 @@
 PODS:
   - Flutter (1.0.0)
-  - MobileVLCKit (3.1.5)
+  - libnestegg (0.3)
+  - libogg (1.3.3)
+  - liboggz (1.2.0-1):
+    - libogg (>= 1.0)
+  - libopus (1.1):
+    - libopus/float (= 1.1)
+  - libopus/float (1.1)
+  - libvorbis (1.3.5):
+    - libogg (>= 1.0)
+  - libvpx (1.7.0)
   - musicplayer (0.0.1):
     - Flutter
-    - MobileVLCKit
+    - OGVKit/Ogg/Vorbis
+    - OGVKit/WebM
     - SDWebImage
+  - OGVKit/Core (0.5.13)
+  - OGVKit/libskeleton (0.5.13):
+    - libogg
+  - OGVKit/Ogg/Vorbis (0.5.13):
+    - OGVKit/OggDemuxer
+    - OGVKit/VorbisDecoder
+  - OGVKit/OggDemuxer (0.5.13):
+    - liboggz (= 1.2.0-1)
+    - OGVKit/Core
+    - OGVKit/libskeleton (~> 0.4)
+  - OGVKit/OpusDecoder (0.5.13):
+    - libopus
+    - OGVKit/Core
+  - OGVKit/VorbisDecoder (0.5.13):
+    - libvorbis
+    - OGVKit/Core
+  - OGVKit/VP8Decoder (0.5.13):
+    - libvpx (~> 1.7.0)
+    - OGVKit/Core
+  - OGVKit/WebM (0.5.13):
+    - OGVKit/WebM/Opus (= 0.5.13)
+    - OGVKit/WebM/Vorbis (= 0.5.13)
+    - OGVKit/WebM/VP8 (= 0.5.13)
+  - OGVKit/WebM/Opus (0.5.13):
+    - OGVKit/OpusDecoder
+    - OGVKit/WebMDemuxer
+  - OGVKit/WebM/Vorbis (0.5.13):
+    - OGVKit/VorbisDecoder
+    - OGVKit/WebMDemuxer
+  - OGVKit/WebM/VP8 (0.5.13):
+    - OGVKit/VorbisDecoder
+    - OGVKit/VP8Decoder
+    - OGVKit/WebMDemuxer
+  - OGVKit/WebMDemuxer (0.5.13):
+    - libnestegg (~> 0.2)
+    - OGVKit/Core
   - path_provider (0.0.1):
     - Flutter
   - SDWebImage (4.4.2):
@@ -16,12 +62,20 @@ PODS:
 DEPENDENCIES:
   - Flutter (from `.symlinks/flutter/ios`)
   - musicplayer (from `.symlinks/plugins/musicplayer/ios`)
+  - OGVKit/Ogg/Vorbis (from `https://github.com/Grarak/OGVKit.git`)
+  - OGVKit/WebM (from `https://github.com/Grarak/OGVKit.git`)
   - path_provider (from `.symlinks/plugins/path_provider/ios`)
   - shared_preferences (from `.symlinks/plugins/shared_preferences/ios`)
 
 SPEC REPOS:
+  https://github.com/brion/OGVKit-Specs.git:
+    - libnestegg
+    - libogg
+    - liboggz
+    - libvorbis
+    - libvpx
   https://github.com/cocoapods/specs.git:
-    - MobileVLCKit
+    - libopus
     - SDWebImage
 
 EXTERNAL SOURCES:
@@ -29,19 +83,32 @@ EXTERNAL SOURCES:
     :path: ".symlinks/flutter/ios"
   musicplayer:
     :path: ".symlinks/plugins/musicplayer/ios"
+  OGVKit:
+    :git: https://github.com/Grarak/OGVKit.git
   path_provider:
     :path: ".symlinks/plugins/path_provider/ios"
   shared_preferences:
     :path: ".symlinks/plugins/shared_preferences/ios"
 
+CHECKOUT OPTIONS:
+  OGVKit:
+    :commit: 4eeb89555a38b8a1a9e0af0860238bd5ae064bee
+    :git: https://github.com/Grarak/OGVKit.git
+
 SPEC CHECKSUMS:
   Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
-  MobileVLCKit: 4d44e56380d0ee41c76f9ec7015d3a4b62a963a3
-  musicplayer: 26dcfbde9a277167516f05a9d67b8dbf54066607
+  libnestegg: 851afa1dc38c810bb18fa6459c39aa124abd7fc0
+  libogg: 35e313159a7270931d0f0f208c2d5f60bc05399b
+  liboggz: 976a3ffd70b71e8c4faa06a298547038ab03c567
+  libopus: ad5f060dcb8f30f139777244d70f9111f1c80863
+  libvorbis: b2c6a2c2bb22447d80403981185b213cf688fae7
+  libvpx: 5abeaf729fa406fd65ae1c19adcf00329c40e02a
+  musicplayer: bb65e7fa58162a2f21a5794adfc2c0544b01fc35
+  OGVKit: 46e30d4b1f06e179b1f254c92604bfd6c4b8338c
   path_provider: 09407919825bfe3c2deae39453b7a5b44f467873
   SDWebImage: 624d6e296c69b244bcede364c72ae0430ac14681
   shared_preferences: 5a1d487c427ee18fcd3ea1f2a131569481834b53
 
-PODFILE CHECKSUM: 1e5af4103afd21ca5ead147d7b81d06f494f51a2
+PODFILE CHECKSUM: 5c8973c7f5297b5a5aa4c8ea5f7a7dfb95c924d2
 
 COCOAPODS: 1.6.0.beta.1

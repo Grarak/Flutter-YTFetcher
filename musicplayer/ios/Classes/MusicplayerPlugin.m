@@ -2,6 +2,11 @@
 #import "MusicplayerPlugin.h"
 #import "SDWebImageDownloader.h"
 
+NSString *GetMusicplayerDirectoryOfType(NSSearchPathDirectory dir) {
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(dir, NSUserDomainMask, YES);
+    return paths.firstObject;
+}
+
 @implementation MusicplayerPlugin
 + (void)registerWithRegistrar:(NSObject <FlutterPluginRegistrar> *)registrar {
     FlutterMethodChannel *channel = [FlutterMethodChannel
@@ -29,12 +34,7 @@
 }
 
 - (MPRemoteCommandHandlerStatus)onPlayCommand:(MPRemoteCommandEvent *)event {
-    NSArray<YoutubeTrack *> *tracks = [self getTracks];
-    NSUInteger currentPosition = [self getPosition];
-    if (![_musicPlayer isPlaying]
-            && tracks != nil && [tracks count] > 0
-            && currentPosition >= 0
-            && currentPosition < [tracks count]) {
+    if (![_musicPlayer isPlaying]) {
         [self resume];
         return MPRemoteCommandHandlerStatusSuccess;
     }
@@ -42,12 +42,7 @@
 }
 
 - (MPRemoteCommandHandlerStatus)onPauseCommand:(MPRemoteCommandEvent *)event {
-    NSArray<YoutubeTrack *> *tracks = [self getTracks];
-    NSUInteger currentPosition = [self getPosition];
-    if ([_musicPlayer isPlaying]
-            && tracks != nil && [tracks count] > 0
-            && currentPosition >= 0
-            && currentPosition < [tracks count]) {
+    if ([_musicPlayer isPlaying]) {
         [self pause];
         return MPRemoteCommandHandlerStatusSuccess;
     }
@@ -72,6 +67,7 @@
 
 - (MPRemoteCommandHandlerStatus)onPlaybackPositionCommand:(MPChangePlaybackPositionCommandEvent *)event {
     [_musicPlayer setPosition:(int) (event.positionTime * 1000)];
+    [self setNowPlaying:[self getCurrentTrack]];
     return MPRemoteCommandHandlerStatusSuccess;
 }
 
@@ -83,16 +79,10 @@
             [self onPlay];
         } else if ([_musicPlayer isPreparing]) {
             [self onPreparing];
+        } else if ([self getCurrentTrack] != nil) {
+            [self onPause];
         } else {
-            NSArray<YoutubeTrack *> *tracks = [self getTracks];
-            NSUInteger currentPosition = [self getPosition];
-            if (tracks != nil && [tracks count] > 0
-                    && currentPosition >= 0
-                    && currentPosition < [tracks count]) {
-                [self onPause];
-            } else {
-                [_channel invokeMethod:@"onDisconnect" arguments:nil];
-            }
+            [_channel invokeMethod:@"onDisconnect" arguments:nil];
         }
         result(@YES);
     } else if ([@"playTracks" isEqualToString:call.method]) {
@@ -131,6 +121,10 @@
                 result([_currentTracks[_currentPosition] to_dictionary]);
             }
         }
+    } else if ([@"stop" isEqualToString:call.method]) {
+        [self setNowPlaying:nil];
+        [_musicPlayer pause];
+        result(@YES);
     } else if ([@"unbind" isEqualToString:call.method]) {
         result(@YES);
     } else {
@@ -139,6 +133,11 @@
 }
 
 - (void)setNowPlaying:(YoutubeTrack *)track {
+    if (track == nil) {
+        [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:nil];
+        return;
+    }
+
     SDWebImageDownloader *downloader = [SDWebImageDownloader sharedDownloader];
     [downloader downloadImageWithURL:[
                     NSURL URLWithString:[track thumbnail]]
@@ -166,9 +165,7 @@
 }
 
 - (void)playTracks:(NSString *)url :(NSArray<YoutubeTrack *> *)tracks :(NSUInteger)position {
-    if ([_musicPlayer isPlaying]) {
-        [_musicPlayer stop];
-    }
+    [_musicPlayer stop];
 
     if (_server == nil) {
         if (url == nil) {
@@ -189,7 +186,15 @@
     Youtube *youtube = [[Youtube alloc] init];
     youtube.apikey = track.apiKey;
     youtube.youtubeid = track.youtubeId;
-    [_server fetchSong:youtube :self];
+
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSString *path = [NSString
+            stringWithFormat:@"%@/%@.ogg", GetMusicplayerDirectoryOfType(NSDocumentDirectory), youtube.youtubeid];
+    if ([fileManager fileExistsAtPath:path]) {
+        [_musicPlayer setFile:path];
+    } else {
+        [_server fetchSong:youtube :self];
+    }
 }
 
 - (void)onPreparing {
@@ -249,7 +254,7 @@
 }
 
 - (void)onSuccess:(NSString *)url {
-    [_musicPlayer setUrl:url];
+    [_musicPlayer setUrl:[NSURL URLWithString:url]];
 }
 
 - (void)onFailure:(NSInteger)code {
@@ -300,6 +305,9 @@
 
 - (YoutubeTrack *)getCurrentTrack {
     @synchronized (self) {
+        if (_currentTracks.count == 0 || _currentPosition >= _currentTracks.count) {
+            return nil;
+        }
         return _currentTracks[_currentPosition];
     }
 }

@@ -16,7 +16,8 @@ A new flutter plugin project.
   s.public_header_files = 'Classes/**/*.h'
   s.resources = 'Assets/*'
   s.dependency 'Flutter'
-  s.dependency 'MobileVLCKit'
+  s.dependency 'OGVKit/WebM'
+  s.dependency 'OGVKit/Ogg/Vorbis'
   s.dependency 'SDWebImage'
 
   s.ios.deployment_target = '8.0'
