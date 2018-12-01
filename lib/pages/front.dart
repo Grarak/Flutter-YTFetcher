@@ -78,9 +78,7 @@ class _FrontPageState extends ParentPageState<FrontPage> {
                 onDownload: () async {
                   DownloadManager downloadManager =
                       await DownloadManager.instance;
-                  if (!downloadManager.queue(results[index])) {
-                    viewUtils.showMessageDialog(context, "Already downloaded");
-                  }
+                  downloadManager.queue(context, results[index]);
                 },
               );
             },

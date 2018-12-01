@@ -227,7 +227,6 @@ class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, E
         exoPlayer.seekTo(position)
     }
 
-
     fun getTracks(): List<MusicTrack> {
         synchronized(trackLock) {
             return Collections.unmodifiableList(tracks)

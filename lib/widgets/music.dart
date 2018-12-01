@@ -20,22 +20,42 @@ class Music extends StatelessWidget {
 
   Widget _buildImage() {
     return new Padding(
-      padding: EdgeInsets.all(8.0),
+      padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
       child: new Material(
-        elevation: 4.0,
-        shape: new RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(4.0))),
-        child: new Ink.image(
-          image: new CachedNetworkImageProvider(result.thumbnail),
-          fit: BoxFit.cover,
-          child: new InkWell(
-            onTap: () {
-              if (onClick != null) {
-                onClick();
-              }
-            },
-          ),
+        child: new Stack(
+          children: <Widget>[
+            new Material(
+              elevation: -16.0,
+              child: new Ink.image(
+                image: new CachedNetworkImageProvider(result.thumbnail),
+                fit: BoxFit.cover,
+                child: new InkWell(
+                  onTap: () {
+                    if (onClick != null) {
+                      onClick();
+                    }
+                  },
+                ),
+              ),
+            ),
+            new Align(
+              alignment: Alignment(1.0, 1.0),
+              child: new Container(
+                height: 20.0,
+                margin: EdgeInsets.all(6.0),
+                width: 50.0,
+                color: new Color(0x80000000),
+                child: new Center(
+                  child: new Text(
+                    result.duration,
+                    style: new TextStyle(fontSize: 12.0, color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
+        elevation: 4.0,
       ),
     );
   }

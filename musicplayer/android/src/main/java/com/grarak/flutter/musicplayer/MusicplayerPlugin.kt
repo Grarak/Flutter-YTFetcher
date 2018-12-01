@@ -106,6 +106,13 @@ class MusicplayerPlugin private constructor(private val context: Context,
                 unbind()
                 result.success(null)
             }
+            call.method == "stop" -> {
+                unbind()
+                Intent(context, MusicplayerService::class.java).apply {
+                    context.stopService(this)
+                }
+                result.success(null)
+            }
             else -> result.notImplemented()
         }
     }
@@ -193,14 +200,14 @@ class MusicplayerPlugin private constructor(private val context: Context,
 
     private fun unbind() {
         closed = true
-        if (service != null) {
+        service?.run {
             try {
-                service!!.listener = null
+                listener = null
                 context.unbindService(serviceConnection)
             } catch (ignored: IllegalArgumentException) {
             }
-            service = null
         }
+        service = null
     }
 
     private fun executeCall(runnable: Runnable) {

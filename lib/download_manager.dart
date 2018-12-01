@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'utils.dart' as utils;
 import 'api/youtube_server.dart';
+import 'view_utils.dart' as viewUtils;
 
 abstract class DownloadListener {
   void onDownloadComplete(Download download);
@@ -144,10 +146,13 @@ class DownloadManager implements DownloadListener {
 
   DownloadManager(this._root, this.downloads);
 
-  bool queue(YoutubeResult result) {
+  void queue(BuildContext context, YoutubeResult result) {
     Download download = _createDownload(result);
     if (!downloads.contains(download)) {
       YoutubeServer.saveResult(result);
+      if (download.isDownloaded()) {
+        download._file.deleteSync();
+      }
       downloads.add(download);
       download._startDownload();
       downloads.sort((Download a, Download b) {
@@ -155,9 +160,13 @@ class DownloadManager implements DownloadListener {
             .toLowerCase()
             .compareTo(b.youtubeResult.title.toLowerCase());
       });
-      return true;
+    } else if (context != null) {
+      if (int.parse(result.title.split(":")[0]) > 20) {
+        viewUtils.showMessageDialog(context, "Too long to get downloaded");
+      } else {
+        viewUtils.showMessageDialog(context, "Already downloaded");
+      }
     }
-    return false;
   }
 
   Download _createDownload(YoutubeResult result) {

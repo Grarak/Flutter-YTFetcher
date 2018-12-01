@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:musicplayer/musicplayer.dart';
 
+import 'main.dart';
 import 'pages/front.dart';
 import 'pages/playlists.dart';
 import 'pages/search.dart';
 import 'pages/downloads.dart';
 import 'pages/music_control.dart';
+import 'pages/settings.dart';
 import 'view_utils.dart' as viewUtils;
 import 'widgets/music_bar.dart';
+import 'utils.dart' as utils;
 
 class NavigationItem {
   IconData icon;
@@ -61,6 +64,23 @@ class Home extends StatelessWidget {
           controller,
           key: new PageStorageKey("Downloads"),
         )));
+    items.add(new NavigationItem(
+        Icons.settings,
+        new SettingsPage(
+          (BuildContext context) {
+            viewUtils.showOptionsDialog(
+                context, "Do you want to sign out?", null, () {
+              musicplayer.stop();
+              utils.Settings.setHost(null);
+              utils.Settings.setApiKey(null);
+              Navigator.pushReplacement(context,
+                  new CupertinoPageRoute(builder: (BuildContext context) {
+                return new Login();
+              }));
+            });
+          },
+          key: new PageStorageKey("Settings"),
+        )));
   }
 
   @override
@@ -112,7 +132,7 @@ class _HomePageState extends State<HomePage> implements MusicListener {
     if (widget == null) {
       return new Scaffold(
         body: new Center(
-          child: new CircularProgressIndicator(),
+          child: new CupertinoActivityIndicator(),
         ),
       );
     }

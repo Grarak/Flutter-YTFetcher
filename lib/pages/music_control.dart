@@ -139,7 +139,7 @@ class _MusicControlPageState extends State<_MusicControlPage>
   Widget _buildControls() {
     if (_state == PlayingState.PREPARING) {
       return new Center(
-        child: new CircularProgressIndicator(),
+        child: new CupertinoActivityIndicator(),
       );
     }
 
@@ -210,7 +210,7 @@ class _MusicControlPageState extends State<_MusicControlPage>
     if (_state == null || _tracks == null || _currentPosition == null) {
       return new Scaffold(
         body: new Center(
-          child: new CircularProgressIndicator(),
+          child: new CupertinoActivityIndicator(),
         ),
       );
     }

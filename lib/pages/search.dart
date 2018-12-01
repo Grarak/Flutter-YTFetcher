@@ -85,10 +85,7 @@ class _SearchPageState extends ParentPageState<SearchPage> {
                   onDownload: () async {
                     DownloadManager downloadManager =
                         await DownloadManager.instance;
-                    if (!downloadManager.queue(result)) {
-                      viewUtils.showMessageDialog(
-                          context, "Already downloaded");
-                    }
+                    downloadManager.queue(context, result);
                   },
                 ),
               );

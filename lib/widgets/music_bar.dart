@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:musicplayer/musicplayer.dart';
 
@@ -40,7 +41,7 @@ class MusicBar extends StatelessWidget {
         return new Icon(Icons.play_arrow);
       case PlayingState.PREPARING:
       default:
-        return new CircularProgressIndicator();
+        return new CupertinoActivityIndicator();
     }
   }
 

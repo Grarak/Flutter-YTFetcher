@@ -111,7 +111,7 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
                     DownloadManager downloadManager =
                         await DownloadManager.instance;
                     for (YoutubeResult result in widget.results) {
-                      downloadManager.queue(result);
+                      downloadManager.queue(null, result);
                     }
                   },
                   child: new Icon(Icons.file_download),
@@ -206,10 +206,7 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
                                 case 3:
                                   DownloadManager downloadManager =
                                       await DownloadManager.instance;
-                                  if (!downloadManager.queue(item)) {
-                                    viewUtils.showMessageDialog(
-                                        context, "Already downloaded");
-                                  }
+                                  downloadManager.queue(context, item);
                                   break;
                               }
                             },

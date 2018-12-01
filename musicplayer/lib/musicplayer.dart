@@ -186,6 +186,10 @@ class Musicplayer {
     return MusicTrack.fromJson(json);
   }
 
+  Future<dynamic> stop() async {
+    return await _channel.invokeMethod("stop");
+  }
+
   Future<dynamic> unbind() async {
     return _channel.invokeMethod("unbind");
   }

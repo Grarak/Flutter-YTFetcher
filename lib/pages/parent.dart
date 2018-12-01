@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:musicplayer/musicplayer.dart';
 
 import '../api/playlist_server.dart';
@@ -83,7 +84,7 @@ abstract class ParentPageState<T extends ParentPage> extends State<T>
   }
 
   Widget buildLoadingWidget() {
-    return new CircularProgressIndicator();
+    return new CupertinoActivityIndicator();
   }
 
   @override

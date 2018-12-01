@@ -188,7 +188,7 @@ class _LoginPageState extends State<LoginPage> {
     if (loading) {
       return new Scaffold(
         body: new Center(
-          child: new CircularProgressIndicator(),
+          child: new CupertinoActivityIndicator(),
         ),
       );
     }
