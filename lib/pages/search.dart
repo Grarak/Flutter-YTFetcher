@@ -49,6 +49,7 @@ class _SearchPageState extends ParentPageState<SearchPage> {
       child: new Column(
         children: <Widget>[
           new InputBar(Icons.search, (String text) {
+            widgets.clear();
             widget.youtubeServer.close();
             setState(() {
               _showLoading = true;
