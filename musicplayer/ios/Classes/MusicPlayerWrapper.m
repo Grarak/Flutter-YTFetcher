@@ -103,9 +103,13 @@
 }
 
 - (void)setPosition:(float)position {
-    [self setState:Seeking];
-    _position = position;
-    [_playerView seek:position];
+    if ((int) position != 0 && (int) position == (int) [self getDuration]) {
+        [_musicPlayerDelegate onComplete];
+    } else {
+        [self setState:Seeking];
+        _position = position;
+        [_playerView seek:position];
+    }
 }
 
 - (MusicPlayerState)getState {
