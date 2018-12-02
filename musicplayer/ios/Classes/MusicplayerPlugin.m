@@ -174,16 +174,25 @@ NSString *GetMusicplayerDirectoryOfType(NSSearchPathDirectory dir) {
 - (void)playTracks:(NSString *)url :(NSArray<YoutubeTrack *> *)tracks :(NSUInteger)position {
     [_musicPlayer stop];
 
-    if (_server == nil) {
+    if (!_youtubeServer) {
         if (!url) {
             return;
         }
-        _server = [[YoutubeServer alloc] initWithUrl:url];
+        _youtubeServer = [[YoutubeServer alloc] initWithUrl:url];
     } else {
-        [_server close];
+        [_youtubeServer close];
         if (url) {
-            [_server setUrl:url];
+            [_youtubeServer setUrl:url];
         }
+    }
+
+    if (!_historyServer) {
+        if (!url) {
+            return;
+        }
+        _historyServer = [[HistoryServer alloc] initWithUrl:url];
+    } else if (url) {
+        [_historyServer setUrl:url];
     }
 
     [self setTracks:tracks :position];
@@ -193,14 +202,20 @@ NSString *GetMusicplayerDirectoryOfType(NSSearchPathDirectory dir) {
     Youtube *youtube = [[Youtube alloc] init];
     youtube.apikey = track.apiKey;
     youtube.youtubeid = track.youtubeId;
+    youtube.addhistory = YES;
 
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSString *path = [NSString
             stringWithFormat:@"%@/%@.ogg", GetMusicplayerDirectoryOfType(NSDocumentDirectory), youtube.youtubeid];
     if ([fileManager fileExistsAtPath:path]) {
         [_musicPlayer setFile:path];
+
+        History *history = [[History alloc] init];
+        history.apikey = track.apiKey;
+        history.id = track.youtubeId;
+        [_historyServer add:history];
     } else {
-        [_server fetchSong:youtube :self];
+        [_youtubeServer fetchSong:youtube :self];
     }
 }
 

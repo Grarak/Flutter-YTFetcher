@@ -15,7 +15,7 @@ class InputBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      padding: EdgeInsets.only(left: 16.0, top: 8.0, right: 16.0),
       child: new Row(
         children: <Widget>[
           new Expanded(
@@ -36,7 +36,7 @@ class InputBar extends StatelessWidget {
                     },
                   ),
                 ),
-                height: 40.0,
+                height: 50.0,
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
               ),
               margin: EdgeInsets.all(0.0),

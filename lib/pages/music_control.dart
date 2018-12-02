@@ -5,7 +5,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:musicplayer/musicplayer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import '../widgets/title_bar.dart';
 import '../view_utils.dart' as viewUtils;
 import '../utils.dart' as utils;
 
@@ -110,10 +109,13 @@ class _MusicControlPageState extends State<_MusicControlPage>
           child: new PageView.builder(
             itemBuilder: (BuildContext context, int index) {
               return new Container(
-                padding: EdgeInsets.only(bottom: 45.0),
-                child: new CachedNetworkImage(
-                  imageUrl: _tracks[index].thumbnail,
-                  fit: BoxFit.fitHeight,
+                padding: EdgeInsets.only(left: 16.0, right: 16.0, bottom: 45.0),
+                child: new Material(
+                  elevation: 5.0,
+                  child: new CachedNetworkImage(
+                    imageUrl: _tracks[index].thumbnail,
+                    fit: BoxFit.fitHeight,
+                  ),
                 ),
               );
             },
@@ -218,41 +220,46 @@ class _MusicControlPageState extends State<_MusicControlPage>
     MusicTrack track = _tracks[_currentPosition];
 
     return new Scaffold(
+      appBar: new AppBar(
+        backgroundColor: CupertinoColors.activeBlue,
+        brightness: Brightness.dark,
+        leading: new IconButton(
+          icon: const BackButtonIcon(),
+          onPressed: widget.onBackClick,
+        ),
+        title: new Text("Now playing"),
+      ),
       body: new OrientationBuilder(
-          builder: (BuildContext context, Orientation orientation) {
-        return new Column(
-          children: <Widget>[
-            new TitleBar(
-              title: "Now playing",
-              rightSide: null,
-              onBackClick: widget.onBackClick,
-            ),
-            new Expanded(
-              child: orientation == Orientation.portrait
-                  ? new Column(
-                      children: <Widget>[
-                        new Expanded(
-                          child: _trackBuilder(track),
-                        ),
-                        new Expanded(
-                          child: _buildControls(),
-                        ),
-                      ],
-                    )
-                  : new Row(
-                      children: <Widget>[
-                        new Expanded(
-                          child: _trackBuilder(track),
-                        ),
-                        new Expanded(
-                          child: _buildControls(),
-                        ),
-                      ],
-                    ),
-            ),
-          ],
-        );
-      }),
+        builder: (BuildContext context, Orientation orientation) {
+          return new Column(
+            children: <Widget>[
+              new Expanded(
+                child: orientation == Orientation.portrait
+                    ? new Column(
+                        children: <Widget>[
+                          new Expanded(
+                            child: _trackBuilder(track),
+                          ),
+                          new Expanded(
+                            child: _buildControls(),
+                          ),
+                        ],
+                      )
+                    : new Row(
+                        children: <Widget>[
+                          new Expanded(
+                            child: _trackBuilder(track),
+                          ),
+                          new Expanded(
+                            child: _buildControls(),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -326,7 +333,7 @@ class _SeekState extends State<_Seek> {
         double duration = await widget.musicplayer.getDuration();
         double position = await widget.musicplayer.getPosition();
 
-        if (mounted && !onChanging && widget.playing) {
+        if (mounted && !onChanging) {
           setState(() {
             _duration = duration;
             _position = position;
@@ -364,6 +371,9 @@ class _SeekState extends State<_Seek> {
 
   @override
   Widget build(BuildContext context) {
+    if (_position < 0 || _position > _duration) {
+      return new CupertinoActivityIndicator();
+    }
     return new Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[

@@ -46,7 +46,7 @@ class _DownloadsPageState extends ParentPageState<DownloadsPage>
     return initialized
         ? new Text(
             "No downloads",
-            style: new TextStyle(fontSize: 16.0),
+            style: new TextStyle(fontSize: 18.0),
           )
         : super.buildLoadingWidget();
   }

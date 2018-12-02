@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:musicplayer/musicplayer.dart';
 
 import 'main.dart';
@@ -9,6 +10,7 @@ import 'pages/search.dart';
 import 'pages/downloads.dart';
 import 'pages/music_control.dart';
 import 'pages/settings.dart';
+import 'pages/history.dart';
 import 'view_utils.dart' as viewUtils;
 import 'widgets/music_bar.dart';
 import 'utils.dart' as utils;
@@ -68,6 +70,12 @@ class Home extends StatelessWidget {
         Icons.settings,
         new SettingsPage(
           (BuildContext context) {
+            Navigator.push(context,
+                new CupertinoPageRoute(builder: (BuildContext context) {
+              return new HistoryPage(apiKey, host, musicplayer, controller);
+            }));
+          },
+          (BuildContext context) {
             viewUtils.showOptionsDialog(
                 context, "Do you want to sign out?", null, () {
               musicplayer.stop();
@@ -87,9 +95,13 @@ class Home extends StatelessWidget {
   Widget build(BuildContext context) {
     return new MaterialApp(
       theme: new ThemeData(
+        primaryColor: CupertinoColors.activeBlue,
         accentColor: CupertinoColors.activeBlue,
       ),
-      home: new HomePage(host, items, musicplayer),
+      home: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
+        child: new HomePage(host, items, musicplayer),
+      ),
     );
   }
 }

@@ -47,7 +47,7 @@ open class Server(public var url: String) : Closeable {
         }
     }
 
-    protected fun post(url: String, data: String, requestCallback: Request.RequestCallback) {
+    protected fun post(url: String, data: String, requestCallback: Request.RequestCallback?) {
         val request = Request()
         synchronized(this) {
             requests.add(request)
@@ -55,17 +55,21 @@ open class Server(public var url: String) : Closeable {
         executor.execute {
             request.doRequest(url, "application/json", data, object : Request.RequestCallback {
                 override fun onConnect(request: Request, status: Int, url: String) {
-                    requestCallback.onConnect(request, status, url)
+                    requestCallback?.onConnect(request, status, url)
                 }
 
                 override fun onSuccess(request: Request, status: Int,
                                        headers: Map<String, List<String>>, response: String) {
-                    handleRequestCallbackSuccess(requestCallback, request,
-                            status, headers, response)
+                    requestCallback?.run {
+                        handleRequestCallbackSuccess(this, request,
+                                status, headers, response)
+                    }
                 }
 
                 override fun onFailure(request: Request, e: Exception?) {
-                    handleRequestCallbackFailure(requestCallback, request, e)
+                    requestCallback?.run {
+                        handleRequestCallbackFailure(this, request, e)
+                    }
                 }
             })
         }

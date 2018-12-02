@@ -151,23 +151,23 @@ class DownloadManager implements DownloadListener {
   DownloadManager(this._root, this.downloads);
 
   void queue(BuildContext context, YoutubeResult result) {
-    Download download = _createDownload(result);
-    if (!downloads.contains(download)) {
-      YoutubeServer.saveResult(result);
-      if (download.isDownloaded()) {
-        download._file.deleteSync();
-      }
-      downloads.add(download);
-      download._startDownload();
-      downloads.sort((Download a, Download b) {
-        return a.youtubeResult.title
-            .toLowerCase()
-            .compareTo(b.youtubeResult.title.toLowerCase());
-      });
-    } else if (context != null) {
-      if (int.parse(result.title.split(":")[0]) > 20) {
-        viewUtils.showMessageDialog(context, "Too long to get downloaded");
-      } else {
+    if (int.parse(result.duration.split(":")[0]) > 20) {
+      viewUtils.showMessageDialog(context, "Too long to be downloaded");
+    } else {
+      Download download = _createDownload(result);
+      if (!downloads.contains(download)) {
+        YoutubeServer.saveResult(result);
+        if (download.isDownloaded()) {
+          download._file.deleteSync();
+        }
+        downloads.add(download);
+        download._startDownload();
+        downloads.sort((Download a, Download b) {
+          return a.youtubeResult.title
+              .toLowerCase()
+              .compareTo(b.youtubeResult.title.toLowerCase());
+        });
+      } else if (context != null) {
         viewUtils.showMessageDialog(context, "Already downloaded");
       }
     }

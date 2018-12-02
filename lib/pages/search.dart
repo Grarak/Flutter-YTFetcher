@@ -39,6 +39,11 @@ class _SearchPageState extends ParentPageState<SearchPage> {
   }
 
   @override
+  EdgeInsets buildListPadding() {
+    return EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return new SafeArea(
       child: new Column(
@@ -52,15 +57,15 @@ class _SearchPageState extends ParentPageState<SearchPage> {
             widget.youtubeServer.search(
               new Youtube(apikey: widget.apiKey, searchquery: text),
               (List<YoutubeResult> results) {
-                widgets.clear();
-                for (YoutubeResult result in results) {
-                  widgets.add(
-                    new Music(
-                      result,
+                widgets = List.generate(
+                  results.length,
+                  (int index) {
+                    return new Music(
+                      results[index],
                       horizontal: true,
                       onClick: () {
                         widget.musicplayer.playTrack(
-                            widget.host, result.toTrack(widget.apiKey));
+                            widget.host, results[index].toTrack(widget.apiKey));
                       },
                       onAddPlaylist: () {
                         fetchPlaylist(
@@ -80,7 +85,7 @@ class _SearchPageState extends ParentPageState<SearchPage> {
                                   new PlaylistId(
                                       apikey: widget.apiKey,
                                       name: playlists[selected].name,
-                                      id: result.id),
+                                      id: results[index].id),
                                   () {},
                                   (int code, Object error) {
                                     if (code == codes.PlaylistIdAlreadyExists) {
@@ -99,10 +104,14 @@ class _SearchPageState extends ParentPageState<SearchPage> {
                       onDownload: () async {
                         DownloadManager downloadManager =
                             await DownloadManager.instance;
-                        downloadManager.queue(context, result);
+                        downloadManager.queue(context, results[index]);
                       },
-                    ),
-                  );
+                    );
+                  },
+                );
+
+                if (results.length == 0) {
+                  viewUtils.showMessageDialog(context, "No results found");
                 }
 
                 setState(() {
@@ -118,10 +127,7 @@ class _SearchPageState extends ParentPageState<SearchPage> {
             );
           }, "Search"),
           new Expanded(
-            child: new Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: buildChildren(),
-            ),
+            child: buildChildren(),
           ),
         ],
       ),

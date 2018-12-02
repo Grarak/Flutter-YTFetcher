@@ -22,7 +22,7 @@
 }
 
 - (BOOL)onConnect:(Request *)request :(NSInteger)status :(NSString *)url {
-    if ([_delegate respondsToSelector:@selector(onConnect:::)]) {
+    if (_delegate && [_delegate respondsToSelector:@selector(onConnect:: :)]) {
         return [_delegate onConnect:request :status :url];
     }
     return YES;
@@ -30,14 +30,20 @@
 
 - (void)onSuccess:(Request *)request :(NSInteger)status :(NSDictionary *)headers :(NSData *)response {
     if (status == 200) {
-        [_delegate onSuccess:request :[[NSString alloc] initWithData:response encoding:NSUTF8StringEncoding] :headers];
+        if (_delegate) {
+            [_delegate onSuccess:request :[[NSString alloc] initWithData:response encoding:NSUTF8StringEncoding] :headers];
+        }
     } else {
-        [_delegate onError:request :[Status getStatusCode:response] :nil];
+        if (_delegate) {
+            [_delegate onError:request :[Status getStatusCode:response] :nil];
+        }
     }
 }
 
 - (void)onFailure:(Request *)request :(NSError *)error {
-    [_delegate onError:request :ServerOffline :error];
+    if (_delegate) {
+        [_delegate onError:request :ServerOffline :error];
+    }
 }
 @end
 

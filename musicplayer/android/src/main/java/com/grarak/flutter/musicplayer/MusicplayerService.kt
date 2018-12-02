@@ -13,9 +13,7 @@ import android.os.IBinder
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.ExoPlaybackException
 import com.google.android.exoplayer2.audio.AudioAttributes
-import com.grarak.flutter.musicplayer.network.Status
-import com.grarak.flutter.musicplayer.network.Youtube
-import com.grarak.flutter.musicplayer.network.YoutubeServer
+import com.grarak.flutter.musicplayer.network.*
 import io.flutter.util.PathUtils
 import java.io.File
 import java.nio.file.Path
@@ -33,6 +31,7 @@ class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, E
     private val binder = MusicPlayerBinder()
 
     private val youtubeServer = YoutubeServer()
+    private val historyServer = HistoryServer()
     private lateinit var exoPlayer: ExoPlayerWrapper
     private lateinit var notification: MusicplayerNotification
     private lateinit var audioManager: AudioManager
@@ -163,11 +162,18 @@ class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, E
         youtube.apikey = track.apiKey
         youtube.id = track.id
         youtube.addhistory = true
+
         youtubeServer.url = url
+        historyServer.url = url
 
         val file = File(PathUtils.getDataDirectory(this), youtube.id + ".ogg")
         if (file.exists()) {
             exoPlayer.setFile(file)
+
+            val history = History()
+            history.apikey = track.apiKey
+            history.id = track.id
+            historyServer.add(history)
             return
         }
 

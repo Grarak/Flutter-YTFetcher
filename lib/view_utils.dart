@@ -32,7 +32,16 @@ void showServerNoReachable(BuildContext context) {
   showMessageDialog(context, "Server is not reachable!");
 }
 
+void showServerNoReachableCallback(BuildContext context, onDismiss()) {
+  showMessageDialogCallback(context, "Server is not reachable!", onDismiss);
+}
+
 void showMessageDialog(BuildContext context, String message) {
+  showMessageDialogCallback(context, message, null);
+}
+
+void showMessageDialogCallback(
+    BuildContext context, String message, onDismiss()) {
   showDialog(
     context: context,
     barrierDismissible: false,
@@ -45,6 +54,9 @@ void showMessageDialog(BuildContext context, String message) {
               child: new Text("OK"),
               onPressed: () {
                 Navigator.pop(context);
+                if (onDismiss != null) {
+                  onDismiss();
+                }
               },
             ),
           ],
@@ -56,6 +68,9 @@ void showMessageDialog(BuildContext context, String message) {
             new FlatButton(
               onPressed: () {
                 Navigator.pop(context);
+                if (onDismiss != null) {
+                  onDismiss();
+                }
               },
               child: new Text("OK"),
             ),

@@ -47,6 +47,11 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
   }
 
   @override
+  EdgeInsets buildListPadding() {
+    return EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0);
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (_showLoading) {
       return new Center(child: new CupertinoActivityIndicator());
@@ -80,10 +85,7 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
             });
           }, "New playlist"),
           new Expanded(
-            child: new Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12.0),
-              child: buildChildren(),
-            ),
+            child: buildChildren(),
           ),
         ],
       ),
