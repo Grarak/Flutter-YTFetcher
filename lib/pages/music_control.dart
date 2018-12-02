@@ -114,7 +114,7 @@ class _MusicControlPageState extends State<_MusicControlPage>
                   elevation: 5.0,
                   child: new CachedNetworkImage(
                     imageUrl: _tracks[index].thumbnail,
-                    fit: BoxFit.fill,
+                    fit: BoxFit.cover,
                   ),
                 ),
               );
@@ -371,7 +371,10 @@ class _SeekState extends State<_Seek> {
 
   @override
   Widget build(BuildContext context) {
-    if (_position < 0 || _position > _duration) {
+    if (_position == null ||
+        _duration == null ||
+        _position < 0 ||
+        _position > _duration) {
       return new CupertinoActivityIndicator();
     }
     return new Column(
