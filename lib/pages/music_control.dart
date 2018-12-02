@@ -114,7 +114,7 @@ class _MusicControlPageState extends State<_MusicControlPage>
                   elevation: 5.0,
                   child: new CachedNetworkImage(
                     imageUrl: _tracks[index].thumbnail,
-                    fit: BoxFit.fitHeight,
+                    fit: BoxFit.fill,
                   ),
                 ),
               );
