@@ -61,7 +61,7 @@ class Download {
       return;
     }
 
-    if (_downloadFile.existsSync()) {
+    if (!_downloadFile.existsSync()) {
       _downloadFile.createSync();
     }
 

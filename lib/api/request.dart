@@ -47,7 +47,7 @@ class Request {
         request.contentLength = data.length;
         request.add(utf8.encode(data));
       }
-    } on SocketException catch (error) {
+    } on Error catch (error) {
       onError(error);
       close();
       return;
