@@ -27,8 +27,6 @@ class PlaylistsPage extends ParentPage {
 }
 
 class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
-  bool _showLoading = false;
-
   @override
   void initState() {
     super.initState();
@@ -50,7 +48,7 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_showLoading) {
+    if (showLoading) {
       return new Center(child: new CupertinoActivityIndicator());
     }
 
@@ -58,16 +56,12 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
       child: new Column(
         children: <Widget>[
           new InputBar(Icons.add, (String text) {
-            setState(() {
-              _showLoading = true;
-            });
+            showLoading = true;
 
             widget.playlistServer
                 .create(new Playlist(apikey: widget.apiKey, name: text), () {
               widgets.clear();
-              setState(() {
-                _showLoading = false;
-              });
+              showLoading = false;
               _reload();
             }, (int code, Object error) {
               if (code == codes.PlaylistIdAlreadyExists) {
@@ -76,9 +70,7 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
               } else {
                 viewUtils.showServerNoReachable(context);
               }
-              setState(() {
-                _showLoading = false;
-              });
+              showLoading = false;
             });
           }, "New playlist"),
           new Expanded(
@@ -90,33 +82,25 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
   }
 
   void _reload() {
-    setState(() {
-      _showLoading = true;
-    });
+    showLoading = true;
 
     fetchPlaylist(
       true,
       (List<Playlist> playlists) {
-        setState(() {
-          _showLoading = false;
-        });
+        showLoading = false;
 
         widgets = List.generate(playlists.length, (int index) {
           return new PlaylistItem(
             playlists[index],
             () {
-              setState(() {
-                _showLoading = true;
-              });
+              showLoading = true;
 
               playlists[index].apikey = widget.apiKey;
               widget.playlistServer.listIds(
                 playlists[index],
                 (List<String> ids) {
                   if (ids.isEmpty) {
-                    setState(() {
-                      _showLoading = false;
-                    });
+                    showLoading = false;
                     viewUtils.showMessageDialog(context, "Playlist is empty!");
                     return;
                   }
@@ -128,9 +112,7 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
                   widget.youtubeServer.getInfoList(
                     youtubes,
                     (List<YoutubeResult> results) {
-                      setState(() {
-                        _showLoading = false;
-                      });
+                      showLoading = false;
 
                       Navigator.push(context, new CupertinoPageRoute(
                           builder: (BuildContext context) {
@@ -140,17 +122,13 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
                     },
                     (int code, Object error) {
                       viewUtils.showServerNoReachable(context);
-                      setState(() {
-                        _showLoading = false;
-                      });
+                      showLoading = false;
                     },
                   );
                 },
                 (int code, Object error) {
                   viewUtils.showServerNoReachable(context);
-                  setState(() {
-                    _showLoading = false;
-                  });
+                  showLoading = false;
                 },
               );
             },
@@ -158,21 +136,15 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
             () {
               viewUtils.showOptionsDialog(
                   context, "Delete ${playlists[index].name}?", null, () {
-                setState(() {
-                  _showLoading = true;
-                });
+                showLoading = true;
                 playlists[index].apikey = widget.apiKey;
                 widget.playlistServer.delete(playlists[index], () {
                   widgets.clear();
-                  setState(() {
-                    _showLoading = false;
-                  });
+                  showLoading = true;
                   _reload();
                 }, (int code, Object error) {
                   viewUtils.showServerNoReachable(context);
-                  setState(() {
-                    _showLoading = false;
-                  });
+                  showLoading = true;
                 });
               });
             },

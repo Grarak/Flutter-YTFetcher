@@ -252,7 +252,7 @@
 				"${BUILT_PRODUCTS_DIR}/libnestegg/nestegg.framework",
 				"${BUILT_PRODUCTS_DIR}/libogg/ogg.framework",
 				"${BUILT_PRODUCTS_DIR}/liboggz/oggz.framework",
-				"${BUILT_PRODUCTS_DIR}/libopus-rs/libopus.framework",
+				"${BUILT_PRODUCTS_DIR}/libopus/libopus.framework",
 				"${BUILT_PRODUCTS_DIR}/libvorbis/vorbis.framework",
 				"${PODS_ROOT}/libvpx/VPX.framework",
 				"${BUILT_PRODUCTS_DIR}/musicplayer/musicplayer.framework",

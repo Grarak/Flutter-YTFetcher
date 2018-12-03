@@ -21,8 +21,6 @@ class SearchPage extends ParentPage {
 }
 
 class _SearchPageState extends ParentPageState<SearchPage> {
-  bool _showLoading = false;
-
   @override
   void initState() {
     super.initState();
@@ -32,7 +30,7 @@ class _SearchPageState extends ParentPageState<SearchPage> {
 
   @override
   Widget buildLoadingWidget() {
-    return _showLoading ? super.buildLoadingWidget() : new Container();
+    return showLoading ? super.buildLoadingWidget() : new Container();
   }
 
   @override
@@ -48,9 +46,7 @@ class _SearchPageState extends ParentPageState<SearchPage> {
           new InputBar(Icons.search, (String text) {
             widgets.clear();
             widget.youtubeServer.close();
-            setState(() {
-              _showLoading = true;
-            });
+            showLoading = true;
 
             widget.youtubeServer.search(
               new Youtube(apikey: widget.apiKey, searchquery: text),
@@ -112,15 +108,11 @@ class _SearchPageState extends ParentPageState<SearchPage> {
                   viewUtils.showMessageDialog(context, "No results found");
                 }
 
-                setState(() {
-                  _showLoading = false;
-                });
+                showLoading = false;
               },
               (int code, Object error) {
                 viewUtils.showServerNoReachable(context);
-                setState(() {
-                  _showLoading = false;
-                });
+                showLoading = false;
               },
             );
           }, "Search"),

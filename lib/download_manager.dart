@@ -112,10 +112,10 @@ class Download {
     _client?.close(force: true);
     try {
       await _sink?.flush();
-    } on StateError catch (_) {}
+    } on Error catch (_) {}
     try {
       await _sink?.close();
-    } on StateError catch (_) {}
+    } on Error catch (_) {}
     if (_file.existsSync()) {
       _file.deleteSync();
     }
