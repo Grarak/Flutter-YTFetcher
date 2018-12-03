@@ -155,7 +155,6 @@ class PlaylistServer extends Server {
     Map<String, dynamic> data = playlist.toJson();
     data["ids"] = ids;
     data.remove("public");
-    print(json.encode(data));
     post("users/playlist/setids", json.encode(data),
         (HttpHeaders headers, String response) {
       onSuccess();
