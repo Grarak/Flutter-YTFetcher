@@ -24,72 +24,67 @@ class NavigationItem {
 
 class Home extends StatelessWidget {
   final String host;
-  final List<NavigationItem> items = new List();
-  final Musicplayer musicplayer = new Musicplayer();
+  final List<NavigationItem> items;
 
-  Home(String apiKey, this.host) {
-    PlaylistController controller = new PlaylistController();
-
-    items.add(new NavigationItem(
-        Icons.home,
-        new FrontPage(
-          apiKey,
-          host,
-          musicplayer,
-          controller,
-          key: new PageStorageKey("Front"),
-        )));
-    items.add(new NavigationItem(
-        Icons.playlist_play,
-        new PlaylistsPage(
-          apiKey,
-          host,
-          musicplayer,
-          controller,
-          key: new PageStorageKey("Playlists"),
-        )));
-    items.add(new NavigationItem(
-        Icons.search,
-        new SearchPage(
-          apiKey,
-          host,
-          musicplayer,
-          controller,
-          key: new PageStorageKey("Search"),
-        )));
-    items.add(new NavigationItem(
-        Icons.cloud_download,
-        new DownloadsPage(
-          apiKey,
-          host,
-          musicplayer,
-          controller,
-          key: new PageStorageKey("Downloads"),
-        )));
-    items.add(new NavigationItem(
-        Icons.settings,
-        new SettingsPage(
-          (BuildContext context) {
-            Navigator.push(context,
-                new CupertinoPageRoute(builder: (BuildContext context) {
-              return new HistoryPage(apiKey, host, musicplayer, controller);
-            }));
-          },
-          (BuildContext context) {
-            viewUtils.showOptionsDialog(
-                context, "Do you want to sign out?", null, () {
-              musicplayer.stop();
-              utils.Settings.setHost(null);
-              utils.Settings.setApiKey(null);
-              Navigator.pushReplacement(context,
-                  new CupertinoPageRoute(builder: (BuildContext context) {
-                return new Login();
-              }));
-            });
-          },
-          key: new PageStorageKey("Settings"),
-        )));
-  }
+  Home(String apiKey, this.host)
+      : items = [
+          new NavigationItem(
+            Icons.home,
+            new FrontPage(
+              apiKey,
+              host,
+              key: new PageStorageKey("Front"),
+            ),
+          ),
+          new NavigationItem(
+            Icons.playlist_play,
+            new PlaylistsPage(
+              apiKey,
+              host,
+              key: new PageStorageKey("Playlists"),
+            ),
+          ),
+          new NavigationItem(
+            Icons.search,
+            new SearchPage(
+              apiKey,
+              host,
+              key: new PageStorageKey("Search"),
+            ),
+          ),
+          new NavigationItem(
+            Icons.cloud_download,
+            new DownloadsPage(
+              apiKey,
+              host,
+              key: new PageStorageKey("Downloads"),
+            ),
+          ),
+          new NavigationItem(
+            Icons.settings,
+            new SettingsPage(
+              (BuildContext context) {
+                Navigator.push(context,
+                    new CupertinoPageRoute(builder: (BuildContext context) {
+                  return new HistoryPage(apiKey, host);
+                }));
+              },
+              (BuildContext context) {
+                viewUtils.showOptionsDialog(
+                    context, "Do you want to sign out?", null, () {
+                  Musicplayer.instance.stop();
+                  utils.Settings.setHost(null);
+                  utils.Settings.setApiKey(null);
+                  Navigator.pushReplacement(context,
+                      new CupertinoPageRoute(builder: (BuildContext context) {
+                    return new Login();
+                  }));
+                });
+              },
+              key: new PageStorageKey("Settings"),
+            ),
+          ),
+        ];
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +95,7 @@ class Home extends StatelessWidget {
       ),
       home: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
-        child: new HomePage(host, items, musicplayer),
+        child: new HomePage(host, items, Musicplayer.instance),
       ),
     );
   }
@@ -163,7 +158,7 @@ class _HomePageState extends State<HomePage> implements MusicListener {
           }, () {
             Navigator.push(context,
                 new CupertinoPageRoute(builder: (BuildContext context) {
-              return new MusicControl(widget.host, widget.musicplayer);
+              return new MusicControl(widget.host);
             }));
           }),
         ],

@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:musicplayer/musicplayer.dart';
 
+import 'playlists.dart';
 import '../api/playlist_server.dart';
 import '../api/youtube_server.dart';
 import '../api/user_server.dart';
 import '../api/history_server.dart';
-import 'playlists.dart';
 import '../view_utils.dart' as viewUtils;
 
 abstract class ParentPage extends StatefulWidget {
   final String apiKey;
-  final Musicplayer musicplayer;
-  final PlaylistController playlistController;
   final String host;
   final PlaylistServer playlistServer;
   final YoutubeServer youtubeServer;
   final UserServer userServer;
   final HistoryServer historyServer;
 
-  ParentPage(this.apiKey, this.host, this.musicplayer, this.playlistController,
-      {Key key})
+  ParentPage(this.apiKey, this.host, {Key key})
       : playlistServer = new PlaylistServer(host),
         youtubeServer = new YoutubeServer(host),
         userServer = new UserServer(host),
@@ -67,14 +63,14 @@ abstract class ParentPageState<T extends ParentPage> extends State<T>
   void fetchPlaylist(bool clearCache, onSuccess(List<Playlist> playlists)) {
     widget.playlistServer.close();
     if (clearCache) {
-      widget.playlistController.playlists.clear();
+      PlaylistController.playlists.clear();
     }
 
-    if (widget.playlistController.playlists.isEmpty) {
+    if (PlaylistController.playlists.isEmpty) {
       showLoading = true;
       widget.playlistServer.list(widget.apiKey, (List<Playlist> playlists) {
-        widget.playlistController.playlists.clear();
-        widget.playlistController.playlists.addAll(playlists);
+        PlaylistController.playlists.clear();
+        PlaylistController.playlists.addAll(playlists);
         onSuccess(playlists);
         showLoading = false;
       }, (int code, Object error) {
@@ -82,7 +78,7 @@ abstract class ParentPageState<T extends ParentPage> extends State<T>
         showLoading = false;
       });
     } else {
-      onSuccess(widget.playlistController.playlists);
+      onSuccess(PlaylistController.playlists);
     }
   }
 

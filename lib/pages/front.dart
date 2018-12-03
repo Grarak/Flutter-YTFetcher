@@ -5,16 +5,13 @@ import '../api/youtube_server.dart';
 import '../view_utils.dart' as viewUtils;
 import '../widgets/music.dart';
 import 'parent.dart';
-import 'playlists.dart';
 import '../api/playlist_server.dart';
 import '../api/codes.dart' as codes;
 import '../download_manager.dart';
 
 class FrontPage extends ParentPage {
-  FrontPage(String apiKey, String host, Musicplayer musicplayer,
-      PlaylistController playlistController,
-      {Key key})
-      : super(apiKey, host, musicplayer, playlistController, key: key);
+  FrontPage(String apiKey, String host, {Key key})
+      : super(apiKey, host, key: key);
 
   @override
   State<StatefulWidget> createState() {
@@ -38,7 +35,8 @@ class _FrontPageState extends ParentPageState<FrontPage> {
                 results[index],
                 horizontal: false,
                 onClick: () async {
-                  await widget.musicplayer.playTrack(widget.youtubeServer.host,
+                  await Musicplayer.instance.playTrack(
+                      widget.youtubeServer.host,
                       results[index].toTrack(widget.apiKey));
                 },
                 onAddPlaylist: () {

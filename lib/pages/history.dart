@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:musicplayer/musicplayer.dart';
 
-import 'playlists.dart';
 import 'parent.dart';
 import '../widgets/music.dart';
 import '../api/playlist_server.dart';
@@ -11,9 +10,7 @@ import '../download_manager.dart';
 import '../api/codes.dart' as codes;
 
 class HistoryPage extends ParentPage {
-  HistoryPage(String apiKey, String host, Musicplayer musicplayer,
-      PlaylistController playlistController)
-      : super(apiKey, host, musicplayer, playlistController);
+  HistoryPage(String apiKey, String host) : super(apiKey, host);
 
   @override
   State<StatefulWidget> createState() {
@@ -43,7 +40,7 @@ class _HistoryPageState extends ParentPageState<HistoryPage> {
             (List<YoutubeResult> results) {
           widgets = List.generate(results.length, (int index) {
             return new Music(results[index], onClick: () async {
-              await widget.musicplayer.playTrack(widget.youtubeServer.host,
+              await Musicplayer.instance.playTrack(widget.youtubeServer.host,
                   results[index].toTrack(widget.apiKey));
             }, onAddPlaylist: () {
               fetchPlaylist(

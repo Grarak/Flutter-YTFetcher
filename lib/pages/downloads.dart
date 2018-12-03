@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:musicplayer/musicplayer.dart';
 
-import 'playlists.dart';
 import 'parent.dart';
 import '../download_manager.dart';
 import '../widgets/download_item.dart';
 import '../view_utils.dart' as viewUtils;
 
 class DownloadsPage extends ParentPage {
-  DownloadsPage(String apiKey, String host, Musicplayer musicplayer,
-      PlaylistController playlistController,
-      {Key key})
-      : super(apiKey, host, musicplayer, playlistController, key: key);
+  DownloadsPage(String apiKey, String host, {Key key})
+      : super(apiKey, host, key: key);
 
   @override
   State<StatefulWidget> createState() {
@@ -61,12 +58,12 @@ class _DownloadsPageState extends ParentPageState<DownloadsPage>
         return new DownloadItem(
           download,
           () async {
-            await widget.musicplayer.playTrack(widget.youtubeServer.host,
+            await Musicplayer.instance.playTrack(widget.youtubeServer.host,
                 download.youtubeResult.toTrack(widget.apiKey));
           },
           () async {
             MusicTrack currentTrack =
-                await widget.musicplayer.getCurrentTrack();
+                await Musicplayer.instance.getCurrentTrack();
             if (currentTrack != null &&
                 currentTrack.id == download.youtubeResult.id) {
               viewUtils.showMessageDialog(

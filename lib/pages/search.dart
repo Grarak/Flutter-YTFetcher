@@ -6,16 +6,13 @@ import '../api/youtube_server.dart';
 import '../widgets/input_bar.dart';
 import '../widgets/music.dart';
 import '../view_utils.dart' as viewUtils;
-import 'playlists.dart';
 import '../api/playlist_server.dart';
 import '../api/codes.dart' as codes;
 import '../download_manager.dart';
 
 class SearchPage extends ParentPage {
-  SearchPage(String apiKey, String host, Musicplayer musicplayer,
-      PlaylistController playlistController,
-      {Key key})
-      : super(apiKey, host, musicplayer, playlistController, key: key);
+  SearchPage(String apiKey, String host, {Key key})
+      : super(apiKey, host, key: key);
 
   @override
   State<StatefulWidget> createState() {
@@ -65,7 +62,7 @@ class _SearchPageState extends ParentPageState<SearchPage> {
                       results[index],
                       horizontal: true,
                       onClick: () {
-                        widget.musicplayer.playTrack(
+                        Musicplayer.instance.playTrack(
                             widget.host, results[index].toTrack(widget.apiKey));
                       },
                       onAddPlaylist: () {

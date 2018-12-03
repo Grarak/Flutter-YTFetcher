@@ -10,9 +10,8 @@ import '../utils.dart' as utils;
 
 class MusicControl extends StatelessWidget {
   final String host;
-  final Musicplayer musicplayer;
 
-  MusicControl(this.host, this.musicplayer);
+  MusicControl(this.host);
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +19,12 @@ class MusicControl extends StatelessWidget {
       theme: new ThemeData(
         accentColor: CupertinoColors.activeBlue,
       ),
-      home: new _MusicControlPage(host, () {
-        Navigator.pop(context, false);
-      }, musicplayer),
+      home: new _MusicControlPage(
+        host,
+        () {
+          Navigator.pop(context, false);
+        },
+      ),
     );
   }
 }
@@ -30,9 +32,8 @@ class MusicControl extends StatelessWidget {
 class _MusicControlPage extends StatefulWidget {
   final String host;
   final Function() onBackClick;
-  final Musicplayer musicplayer;
 
-  _MusicControlPage(this.host, this.onBackClick, this.musicplayer);
+  _MusicControlPage(this.host, this.onBackClick);
 
   @override
   State<StatefulWidget> createState() {
@@ -52,14 +53,14 @@ class _MusicControlPageState extends State<_MusicControlPage>
   void initState() {
     super.initState();
 
-    widget.musicplayer.addListener(this);
+    Musicplayer.instance.addListener(this);
 
     WidgetsBinding.instance
         .addObserver(new viewUtils.LifecycleEventHandler(resumeCallBack: () {
-      widget.musicplayer.addListener(this);
+      Musicplayer.instance.addListener(this);
     }, suspendingCallBack: () {
-      widget.musicplayer.unbind();
-      widget.musicplayer.removeListener(this);
+      Musicplayer.instance.unbind();
+      Musicplayer.instance.removeListener(this);
     }));
   }
 
@@ -74,7 +75,7 @@ class _MusicControlPageState extends State<_MusicControlPage>
   void dispose() {
     super.dispose();
 
-    widget.musicplayer.removeListener(this);
+    Musicplayer.instance.removeListener(this);
   }
 
   Widget _trackBuilder(MusicTrack currentTrack) {
@@ -128,7 +129,7 @@ class _MusicControlPageState extends State<_MusicControlPage>
                 : _pageController,
             onPageChanged: (int page) {
               if (page != _currentPosition) {
-                widget.musicplayer.playTracks(widget.host, _tracks, page);
+                Musicplayer.instance.playTracks(widget.host, _tracks, page);
               }
             },
           ),
@@ -151,8 +152,8 @@ class _MusicControlPageState extends State<_MusicControlPage>
         children: <Widget>[
           new Expanded(
             child: new Center(
-              child:
-                  new _Seek(widget.musicplayer, _state == PlayingState.PLAYING),
+              child: new _Seek(
+                  Musicplayer.instance, _state == PlayingState.PLAYING),
             ),
             flex: 1,
           ),
@@ -165,7 +166,7 @@ class _MusicControlPageState extends State<_MusicControlPage>
                     icon: new Icon(Icons.skip_previous),
                     onPressed: () {
                       if (_currentPosition - 1 >= 0) {
-                        widget.musicplayer.playTracks(
+                        Musicplayer.instance.playTracks(
                             widget.host, _tracks, _currentPosition - 1);
                       }
                     },
@@ -178,9 +179,9 @@ class _MusicControlPageState extends State<_MusicControlPage>
                         : Icons.play_arrow),
                     onPressed: () {
                       if (_state == PlayingState.PLAYING) {
-                        widget.musicplayer.pause();
+                        Musicplayer.instance.pause();
                       } else {
-                        widget.musicplayer.resume();
+                        Musicplayer.instance.resume();
                       }
                     },
                     padding: EdgeInsets.all(30.0),
@@ -190,7 +191,7 @@ class _MusicControlPageState extends State<_MusicControlPage>
                     icon: new Icon(Icons.skip_next),
                     onPressed: () {
                       if (_currentPosition + 1 < _tracks.length) {
-                        widget.musicplayer.playTracks(
+                        Musicplayer.instance.playTracks(
                             widget.host, _tracks, _currentPosition + 1);
                       }
                     },

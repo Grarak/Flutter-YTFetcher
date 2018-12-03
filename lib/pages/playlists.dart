@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:musicplayer/musicplayer.dart';
 
 import '../api/playlist_server.dart';
 import '../api/youtube_server.dart';
@@ -12,16 +11,14 @@ import 'playlist_ids.dart';
 import '../api/codes.dart' as codes;
 
 class PlaylistController {
-  List<Playlist> _playlists = new List();
+  static List<Playlist> _playlists = new List();
 
-  List<Playlist> get playlists => _playlists;
+  static List<Playlist> get playlists => _playlists;
 }
 
 class PlaylistsPage extends ParentPage {
-  PlaylistsPage(String apiKey, String host, Musicplayer musicplayer,
-      PlaylistController playlistController,
-      {Key key})
-      : super(apiKey, host, musicplayer, playlistController, key: key);
+  PlaylistsPage(String apiKey, String host, {Key key})
+      : super(apiKey, host, key: key);
 
   @override
   State<StatefulWidget> createState() {
@@ -100,94 +97,87 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
     fetchPlaylist(
       true,
       (List<Playlist> playlists) {
-        for (Playlist playlist in playlists) {
-          setState(() {
-            _showLoading = false;
-          });
+        setState(() {
+          _showLoading = false;
+        });
 
-          widgets.add(
-            new PlaylistItem(
-              playlist,
-              () {
-                setState(() {
-                  _showLoading = true;
-                });
+        widgets = List.generate(playlists.length, (int index) {
+          return new PlaylistItem(
+            playlists[index],
+            () {
+              setState(() {
+                _showLoading = true;
+              });
 
-                playlist.apikey = widget.apiKey;
-                widget.playlistServer.listIds(
-                  playlist,
-                  (List<String> ids) {
-                    if (ids.isEmpty) {
+              playlists[index].apikey = widget.apiKey;
+              widget.playlistServer.listIds(
+                playlists[index],
+                (List<String> ids) {
+                  if (ids.isEmpty) {
+                    setState(() {
+                      _showLoading = false;
+                    });
+                    viewUtils.showMessageDialog(context, "Playlist is empty!");
+                    return;
+                  }
+
+                  List<Youtube> youtubes = new List();
+                  for (String id in ids) {
+                    youtubes.add(new Youtube(apikey: widget.apiKey, id: id));
+                  }
+                  widget.youtubeServer.getInfoList(
+                    youtubes,
+                    (List<YoutubeResult> results) {
                       setState(() {
                         _showLoading = false;
                       });
-                      viewUtils.showMessageDialog(
-                          context, "Playlist is empty!");
-                      return;
-                    }
 
-                    List<Youtube> youtubes = new List();
-                    for (String id in ids) {
-                      youtubes.add(new Youtube(apikey: widget.apiKey, id: id));
-                    }
-                    widget.youtubeServer.getInfoList(
-                      youtubes,
-                      (List<YoutubeResult> results) {
-                        setState(() {
-                          _showLoading = false;
-                        });
-
-                        Navigator.push(context, new CupertinoPageRoute(
-                            builder: (BuildContext context) {
-                          return new PlaylistIds(
-                              widget.host,
-                              widget.musicplayer,
-                              widget.playlistController,
-                              playlist,
-                              results);
-                        }));
-                      },
-                      (int code, Object error) {
-                        viewUtils.showServerNoReachable(context);
-                        setState(() {
-                          _showLoading = false;
-                        });
-                      },
-                    );
-                  },
-                  (int code, Object error) {
-                    viewUtils.showServerNoReachable(context);
-                    setState(() {
-                      _showLoading = false;
-                    });
-                  },
-                );
-              },
-              (bool public) {},
-              () {
-                viewUtils.showOptionsDialog(
-                    context, "Delete ${playlist.name}?", null, () {
+                      Navigator.push(context, new CupertinoPageRoute(
+                          builder: (BuildContext context) {
+                        return new PlaylistIds(
+                            widget.host, playlists[index], results);
+                      }));
+                    },
+                    (int code, Object error) {
+                      viewUtils.showServerNoReachable(context);
+                      setState(() {
+                        _showLoading = false;
+                      });
+                    },
+                  );
+                },
+                (int code, Object error) {
+                  viewUtils.showServerNoReachable(context);
                   setState(() {
-                    _showLoading = true;
+                    _showLoading = false;
                   });
-                  playlist.apikey = widget.apiKey;
-                  widget.playlistServer.delete(playlist, () {
-                    widgets.clear();
-                    setState(() {
-                      _showLoading = false;
-                    });
-                    _reload();
-                  }, (int code, Object error) {
-                    viewUtils.showServerNoReachable(context);
-                    setState(() {
-                      _showLoading = false;
-                    });
+                },
+              );
+            },
+            (bool public) {},
+            () {
+              viewUtils.showOptionsDialog(
+                  context, "Delete ${playlists[index].name}?", null, () {
+                setState(() {
+                  _showLoading = true;
+                });
+                playlists[index].apikey = widget.apiKey;
+                widget.playlistServer.delete(playlists[index], () {
+                  widgets.clear();
+                  setState(() {
+                    _showLoading = false;
+                  });
+                  _reload();
+                }, (int code, Object error) {
+                  viewUtils.showServerNoReachable(context);
+                  setState(() {
+                    _showLoading = false;
                   });
                 });
-              },
-            ),
+              });
+            },
           );
-        }
+        });
       },
     );
   }

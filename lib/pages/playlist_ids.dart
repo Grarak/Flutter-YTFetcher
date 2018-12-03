@@ -5,20 +5,16 @@ import 'package:musicplayer/musicplayer.dart';
 
 import '../api/youtube_server.dart';
 import 'parent.dart';
-import 'playlists.dart';
 import '../view_utils.dart' as viewUtils;
 import '../api/playlist_server.dart';
 import '../download_manager.dart';
 
 class PlaylistIds extends StatelessWidget {
   final String host;
-  final Musicplayer musicplayer;
-  final PlaylistController playlistController;
   final Playlist playlist;
   final List<YoutubeResult> results;
 
-  PlaylistIds(this.host, this.musicplayer, this.playlistController,
-      this.playlist, this.results);
+  PlaylistIds(this.host, this.playlist, this.results);
 
   @override
   Widget build(BuildContext context) {
@@ -26,8 +22,7 @@ class PlaylistIds extends StatelessWidget {
       theme: new ThemeData(
         accentColor: CupertinoColors.activeBlue,
       ),
-      home: new _PlaylistIdsPage(
-          host, musicplayer, playlistController, playlist, results, () {
+      home: new _PlaylistIdsPage(host, playlist, results, () {
         Navigator.pop(context, false);
       }),
     );
@@ -39,14 +34,8 @@ class _PlaylistIdsPage extends ParentPage {
   final List<YoutubeResult> results;
   final Function() onBackClick;
 
-  _PlaylistIdsPage(
-      String host,
-      Musicplayer musicplayer,
-      PlaylistController controller,
-      this.playlist,
-      this.results,
-      this.onBackClick)
-      : super(playlist.apikey, host, musicplayer, controller);
+  _PlaylistIdsPage(String host, this.playlist, this.results, this.onBackClick)
+      : super(playlist.apikey, host);
 
   @override
   State<StatefulWidget> createState() {
@@ -128,14 +117,14 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
                 },
               );
               shuffled.shuffle();
-              widget.musicplayer.playTracks(widget.host, shuffled, 0);
+              Musicplayer.instance.playTracks(widget.host, shuffled, 0);
             },
           ),
           new IconButton(
             icon: new Icon(Icons.play_arrow),
             color: Colors.white,
             onPressed: () {
-              widget.musicplayer.playTracks(
+              Musicplayer.instance.playTracks(
                 widget.host,
                 List.generate(
                   widget.results.length,
@@ -221,7 +210,7 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
                 ],
               ),
               onTap: () {
-                widget.musicplayer.playTrack(
+                Musicplayer.instance.playTrack(
                     widget.playlistServer.host, item.toTrack(widget.apiKey));
               },
             );

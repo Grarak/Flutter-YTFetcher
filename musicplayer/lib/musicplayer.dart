@@ -78,6 +78,15 @@ abstract class MusicListener {
 }
 
 class Musicplayer {
+  static Musicplayer _instance;
+
+  static Musicplayer get instance {
+    if (_instance == null) {
+      _instance = new Musicplayer();
+    }
+    return _instance;
+  }
+
   MethodChannel _channel = MethodChannel("musicplayer");
   Set<MusicListener> _listeners = new Set();
 
