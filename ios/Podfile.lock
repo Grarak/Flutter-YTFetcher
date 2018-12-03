@@ -4,10 +4,12 @@ PODS:
   - libogg (1.3.3)
   - liboggz (1.2.0-1):
     - libogg (>= 1.0)
-  - libopus (1.1):
-    - libopus/float (= 1.1)
-  - libopus/float (1.1)
-  - libvorbis (1.3.5):
+  - libopus-rs (1.2.1.2):
+    - libopus-rs/fixed (= 1.2.1.2)
+    - libopus-rs/float (= 1.2.1.2)
+  - libopus-rs/fixed (1.2.1.2)
+  - libopus-rs/float (1.2.1.2)
+  - libvorbis (1.3.6):
     - libogg (>= 1.0)
   - libvpx (1.7.0)
   - musicplayer (0.0.1):
@@ -26,7 +28,7 @@ PODS:
     - OGVKit/Core
     - OGVKit/libskeleton (~> 0.4)
   - OGVKit/OpusDecoder (0.5.13):
-    - libopus
+    - libopus-rs
     - OGVKit/Core
   - OGVKit/VorbisDecoder (0.5.13):
     - libvorbis
@@ -68,15 +70,15 @@ DEPENDENCIES:
   - shared_preferences (from `.symlinks/plugins/shared_preferences/ios`)
 
 SPEC REPOS:
-  https://github.com/brion/OGVKit-Specs.git:
+  https://github.com/cocoapods/specs.git:
+    - libopus-rs
+    - SDWebImage
+  https://github.com/Grarak/OGVKit-Specs.git:
     - libnestegg
     - libogg
     - liboggz
     - libvorbis
     - libvpx
-  https://github.com/cocoapods/specs.git:
-    - libopus
-    - SDWebImage
 
 EXTERNAL SOURCES:
   Flutter:
@@ -93,7 +95,7 @@ EXTERNAL SOURCES:
 
 CHECKOUT OPTIONS:
   OGVKit:
-    :commit: 4eeb89555a38b8a1a9e0af0860238bd5ae064bee
+    :commit: 0c28a6cf2a6afea721ff6d3cc8009fbcef0d27ac
     :git: https://github.com/Grarak/OGVKit.git
     :submodules: true
 
@@ -102,15 +104,15 @@ SPEC CHECKSUMS:
   libnestegg: 851afa1dc38c810bb18fa6459c39aa124abd7fc0
   libogg: 35e313159a7270931d0f0f208c2d5f60bc05399b
   liboggz: 976a3ffd70b71e8c4faa06a298547038ab03c567
-  libopus: ad5f060dcb8f30f139777244d70f9111f1c80863
-  libvorbis: b2c6a2c2bb22447d80403981185b213cf688fae7
+  libopus-rs: 108d67724252db27d7fc3c2657c9672504498f7f
+  libvorbis: 90e3944346346f541ec2a5f9772d203a1ed4b090
   libvpx: 5abeaf729fa406fd65ae1c19adcf00329c40e02a
   musicplayer: bb65e7fa58162a2f21a5794adfc2c0544b01fc35
-  OGVKit: 46e30d4b1f06e179b1f254c92604bfd6c4b8338c
+  OGVKit: d6b9b77c1ce6ca87606d129a12dc2fca19df8e3e
   path_provider: 09407919825bfe3c2deae39453b7a5b44f467873
   SDWebImage: 624d6e296c69b244bcede364c72ae0430ac14681
   shared_preferences: 5a1d487c427ee18fcd3ea1f2a131569481834b53
 
-PODFILE CHECKSUM: e262a4d21ba74377e0657e3f9012d7187420e19d
+PODFILE CHECKSUM: 3add41cc9806b44c33530ff313e2f05fa9806494
 
 COCOAPODS: 1.6.0.beta.1

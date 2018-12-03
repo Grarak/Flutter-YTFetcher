@@ -36,6 +36,12 @@ class _HistoryPageState extends ParentPageState<HistoryPage> {
         for (String id in ids) {
           youtubes.add(new Youtube(apikey: widget.apiKey, id: id));
         }
+
+        if (ids.length == 0) {
+          viewUtils.showMessageDialogCallback(context, "History is empty", () {
+            Navigator.pop(context);
+          });
+        }
         widget.youtubeServer.getInfoList(youtubes,
             (List<YoutubeResult> results) {
           widgets = List.generate(results.length, (int index) {
