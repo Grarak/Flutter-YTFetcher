@@ -44,7 +44,6 @@ class Settings {
 
   static Future<String> getString(String name, String defaultValue) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String value = prefs.getString(name);
-    return value == null ? defaultValue : value;
+    return prefs.getString(name) ?? defaultValue;
   }
 }
