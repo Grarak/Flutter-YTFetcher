@@ -99,11 +99,15 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
           new IconButton(
             icon: new Icon(Icons.file_download),
             color: Colors.white,
-            onPressed: () async {
-              DownloadManager downloadManager = await DownloadManager.instance;
-              for (YoutubeResult result in widget.results) {
-                downloadManager.queue(null, result);
-              }
+            onPressed: () {
+              viewUtils.showOptionsDialog(
+                  context, "Download whole playlist?", null, () async {
+                DownloadManager downloadManager =
+                    await DownloadManager.instance;
+                for (YoutubeResult result in widget.results) {
+                  downloadManager.queue(null, result);
+                }
+              });
             },
           ),
           new IconButton(

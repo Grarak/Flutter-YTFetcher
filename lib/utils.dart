@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mmkv_plugin/mmkv_plugin.dart';
 
 String fromBase64(String data) {
   return String.fromCharCodes(base64.decode(data));
@@ -38,12 +38,12 @@ class Settings {
   }
 
   static void saveString(String name, String value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString(name, value);
+    Mmkv mmkv = await Mmkv.defaultInstance();
+    mmkv.putString(name, value);
   }
 
   static Future<String> getString(String name, String defaultValue) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(name) ?? defaultValue;
+    Mmkv mmkv = await Mmkv.defaultInstance();
+    return mmkv.getString(name) ?? defaultValue;
   }
 }

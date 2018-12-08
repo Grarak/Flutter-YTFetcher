@@ -3,21 +3,13 @@ import 'package:flutter/cupertino.dart';
 
 import '../api/playlist_server.dart';
 
-class PlaylistItem extends StatefulWidget {
+class PlaylistItem extends StatelessWidget {
   final Playlist playlist;
   final Function() onTap;
-  final Function(bool public) onPublicChange;
   final Function() onDelete;
 
-  PlaylistItem(this.playlist, this.onTap, this.onPublicChange, this.onDelete);
+  PlaylistItem(this.playlist, this.onTap, this.onDelete);
 
-  @override
-  State<StatefulWidget> createState() {
-    return new _PlaylistItemState();
-  }
-}
-
-class _PlaylistItemState extends State<PlaylistItem> {
   @override
   Widget build(BuildContext context) {
     return new Card(
@@ -28,7 +20,7 @@ class _PlaylistItemState extends State<PlaylistItem> {
             children: <Widget>[
               new Expanded(
                 child: new Text(
-                  widget.playlist.name,
+                  playlist.name,
                   style: TextStyle(),
                 ),
               ),
@@ -43,22 +35,13 @@ class _PlaylistItemState extends State<PlaylistItem> {
                   ),
                 ),
               ),
-              new CupertinoSwitch(
-                value: widget.playlist.public,
-                onChanged: (bool on) {
-                  widget.onPublicChange(on);
-                  setState(() {
-                    widget.playlist.public = on;
-                  });
-                },
-              ),
               new PopupMenuButton<int>(
                 padding: EdgeInsets.zero,
                 icon: new Icon(Icons.more_vert),
                 onSelected: (int selection) {
                   switch (selection) {
                     case 0:
-                      widget.onDelete();
+                      onDelete();
                       break;
                   }
                 },
@@ -73,7 +56,7 @@ class _PlaylistItemState extends State<PlaylistItem> {
           ),
         ),
         onTap: () {
-          widget.onTap();
+          onTap();
         },
       ),
     );

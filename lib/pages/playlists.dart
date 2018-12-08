@@ -27,6 +27,9 @@ class PlaylistsPage extends ParentPage {
 }
 
 class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
+  double progressMax;
+  double progress;
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +52,28 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
   @override
   Widget build(BuildContext context) {
     if (showLoading) {
-      return new Center(child: new CupertinoActivityIndicator());
+      return new Center(
+        child: progressMax == null || progress == null
+            ? new CupertinoActivityIndicator()
+            : new Padding(
+                padding: EdgeInsets.all(16.0),
+                child: new Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    new Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: new Text(
+                        "Loading",
+                        style: TextStyle(fontSize: 16.0),
+                      ),
+                    ),
+                    new LinearProgressIndicator(
+                      value: progress / progressMax,
+                    ),
+                  ],
+                ),
+              ),
+      );
     }
 
     return new SafeArea(
@@ -124,6 +148,12 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
                       viewUtils.showServerNoReachable(context);
                       showLoading = false;
                     },
+                    (int progress) {
+                      setState(() {
+                        progressMax = youtubes.length.toDouble();
+                        this.progress = progress.toDouble();
+                      });
+                    },
                   );
                 },
                 (int code, Object error) {
@@ -132,7 +162,6 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
                 },
               );
             },
-            (bool public) {},
             () {
               viewUtils.showOptionsDialog(
                   context, "Delete ${playlists[index].name}?", null, () {

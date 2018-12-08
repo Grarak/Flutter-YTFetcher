@@ -10,6 +10,10 @@ PODS:
   - libvorbis (1.3.6):
     - libogg (>= 1.0)
   - libvpx (1.7.0)
+  - MMKV (1.0.14)
+  - mmkv_plugin (0.0.5):
+    - Flutter
+    - MMKV
   - musicplayer (0.0.1):
     - Flutter
     - OGVKit/Ogg/Vorbis
@@ -53,23 +57,22 @@ PODS:
     - OGVKit/Core
   - path_provider (0.0.1):
     - Flutter
-  - SDWebImage (4.4.2):
-    - SDWebImage/Core (= 4.4.2)
-  - SDWebImage/Core (4.4.2)
-  - shared_preferences (0.0.1):
-    - Flutter
+  - SDWebImage (4.4.3):
+    - SDWebImage/Core (= 4.4.3)
+  - SDWebImage/Core (4.4.3)
 
 DEPENDENCIES:
   - Flutter (from `.symlinks/flutter/ios`)
+  - mmkv_plugin (from `.symlinks/plugins/mmkv_plugin/ios`)
   - musicplayer (from `.symlinks/plugins/musicplayer/ios`)
   - OGVKit/Ogg/Vorbis (from `https://github.com/Grarak/OGVKit.git`)
   - OGVKit/WebM (from `https://github.com/Grarak/OGVKit.git`)
   - path_provider (from `.symlinks/plugins/path_provider/ios`)
-  - shared_preferences (from `.symlinks/plugins/shared_preferences/ios`)
 
 SPEC REPOS:
   https://github.com/cocoapods/specs.git:
     - libopus
+    - MMKV
     - SDWebImage
   https://github.com/Grarak/OGVKit-Specs.git:
     - libnestegg
@@ -81,6 +84,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   Flutter:
     :path: ".symlinks/flutter/ios"
+  mmkv_plugin:
+    :path: ".symlinks/plugins/mmkv_plugin/ios"
   musicplayer:
     :path: ".symlinks/plugins/musicplayer/ios"
   OGVKit:
@@ -88,8 +93,6 @@ EXTERNAL SOURCES:
     :submodules: true
   path_provider:
     :path: ".symlinks/plugins/path_provider/ios"
-  shared_preferences:
-    :path: ".symlinks/plugins/shared_preferences/ios"
 
 CHECKOUT OPTIONS:
   OGVKit:
@@ -105,12 +108,13 @@ SPEC CHECKSUMS:
   libopus: ad5f060dcb8f30f139777244d70f9111f1c80863
   libvorbis: 90e3944346346f541ec2a5f9772d203a1ed4b090
   libvpx: 5abeaf729fa406fd65ae1c19adcf00329c40e02a
+  MMKV: 0941e76758d765a16539ca5e2cdd66515358f41c
+  mmkv_plugin: 883b3e63be4d8d14a4d69358745946d29989d92d
   musicplayer: bb65e7fa58162a2f21a5794adfc2c0544b01fc35
   OGVKit: 46e30d4b1f06e179b1f254c92604bfd6c4b8338c
   path_provider: 09407919825bfe3c2deae39453b7a5b44f467873
-  SDWebImage: 624d6e296c69b244bcede364c72ae0430ac14681
-  shared_preferences: 5a1d487c427ee18fcd3ea1f2a131569481834b53
+  SDWebImage: c5594f1a19c48d526d321e548902b56b479cd508
 
 PODFILE CHECKSUM: 3add41cc9806b44c33530ff313e2f05fa9806494
 
-COCOAPODS: 1.6.0.beta.1
+COCOAPODS: 1.5.3

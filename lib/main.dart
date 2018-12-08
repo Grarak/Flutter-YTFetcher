@@ -184,6 +184,21 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
+  void dispose() {
+    serverAddressController.dispose();
+    usernameController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+
+    serverAddressFocus.dispose();
+    usernameFocus.dispose();
+    passwordFocus.dispose();
+    confirmPasswordFocus.dispose();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (loading) {
       return new Scaffold(

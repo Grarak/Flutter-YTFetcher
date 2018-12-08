@@ -8,6 +8,8 @@ import 'utils.dart' as utils;
 import 'api/youtube_server.dart';
 import 'view_utils.dart' as viewUtils;
 
+int _currentlyDownloading = 0;
+
 abstract class DownloadListener {
   void onDownloadComplete(Download download);
 
@@ -21,6 +23,7 @@ class Download {
   final List<DownloadListener> _listeners = new List();
   IOSink _sink;
   HttpClient _client;
+  bool _closed = false;
 
   Download(this._root, this.youtubeResult);
 
@@ -47,7 +50,7 @@ class Download {
   }
 
   void _startDownload() async {
-    if (isDownloaded()) {
+    if (isDownloaded() || _closed) {
       return;
     }
 
@@ -63,6 +66,13 @@ class Download {
 
     if (!_downloadFile.existsSync()) {
       _downloadFile.createSync();
+    }
+
+    _currentlyDownloading++;
+
+    if (_currentlyDownloading > 5) {
+      _startDownloadDelayed();
+      return;
     }
 
     server?.close();
@@ -84,6 +94,7 @@ class Download {
           request.close().then((HttpClientResponse response) {
             _sink = file.openWrite(mode: FileMode.writeOnly);
             response.pipe(_sink).whenComplete(() {
+              _currentlyDownloading--;
               _client.close(force: true);
               file.renameSync(_file.path);
               for (DownloadListener listener in _listeners) {
@@ -109,6 +120,7 @@ class Download {
   }
 
   void delete() async {
+    _closed = true;
     _client?.close(force: true);
     try {
       await _sink?.flush();

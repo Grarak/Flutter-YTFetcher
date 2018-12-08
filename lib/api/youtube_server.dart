@@ -7,6 +7,7 @@ import 'package:musicplayer/musicplayer.dart';
 
 import 'server.dart';
 import '../utils.dart';
+import 'codes.dart' as codes;
 
 part 'youtube_server.g.dart';
 
@@ -152,13 +153,14 @@ class YoutubeServer extends Server {
   }
 
   void getInfoList(
-    List<Youtube> youtubes,
-    onSuccess(List<YoutubeResult> results),
-    onError(int code, Object error),
-  ) {
+      List<Youtube> youtubes,
+      onSuccess(List<YoutubeResult> results),
+      onError(int code, Object error),
+      onProgress(int progress)) {
     Map<String, YoutubeResult> mappedResults = new Map();
 
-    Function() callback = () {
+    Function(int start) fetch;
+    Function(int count) callback = (int count) {
       if (mappedResults.length == youtubes.length) {
         List<YoutubeResult> results = new List();
         for (Youtube youtube in youtubes) {
@@ -168,26 +170,26 @@ class YoutubeServer extends Server {
           }
         }
         onSuccess(results);
+      } else if (mappedResults.length == count) {
+        fetch(count);
       }
     };
 
-    for (Youtube youtube in youtubes) {
-      getInfo(
-        youtube,
-        (YoutubeResult result) {
-          mappedResults[result.id] = result;
-          callback();
-        },
-        (int code, Object error) {
-          String key = youtube.id;
-          while (mappedResults.containsKey(key)) {
-            key += "1";
-          }
-          mappedResults[key] = null;
-          callback();
-        },
-      );
-    }
+    fetch = (int start) {
+      for (int i = start; i < start + 10 && i < youtubes.length; i++) {
+        getInfo(youtubes[i], (YoutubeResult result) {
+          mappedResults[youtubes[i].id] = result;
+          onProgress(mappedResults.length);
+          callback(start + 10);
+        }, (int status, Object error) {
+          mappedResults[youtubes[i].id] = null;
+          onProgress(mappedResults.length);
+          callback(start + 10);
+        });
+      }
+    };
+
+    fetch(0);
   }
 
   void search(

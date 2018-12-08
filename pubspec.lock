@@ -154,11 +154,13 @@ packages:
     source: sdk
     version: "0.0.0"
   flutter_cache_manager:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: flutter_cache_manager
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "."
+      ref: HEAD
+      resolved-ref: "24298821307e40ae79479ad3ff8cabd1982ff8bf"
+      url: "https://github.com/Grarak/flutter_cache_manager.git"
+    source: git
     version: "0.2.0+1"
   flutter_list_drag_and_drop:
     dependency: "direct main"
@@ -284,6 +286,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.9.6+2"
+  mmkv_plugin:
+    dependency: "direct main"
+    description:
+      name: mmkv_plugin
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.0.12"
   musicplayer:
     dependency: "direct main"
     description:
@@ -306,7 +315,7 @@ packages:
     source: hosted
     version: "1.6.2"
   path_provider:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path_provider
       url: "https://pub.dartlang.org"
@@ -354,13 +363,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.1"
-  shared_preferences:
-    dependency: "direct main"
-    description:
-      name: shared_preferences
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.4.3"
   shelf:
     dependency: transitive
     description:

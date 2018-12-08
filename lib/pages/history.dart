@@ -19,6 +19,35 @@ class HistoryPage extends ParentPage {
 }
 
 class _HistoryPageState extends ParentPageState<HistoryPage> {
+  double progressMax;
+  double progress;
+
+  @override
+  Widget buildLoadingWidget() {
+    return progressMax == null || progress == null
+        ? super.buildLoadingWidget()
+        : new Center(
+            child: new Padding(
+              padding: EdgeInsets.all(16.0),
+              child: new Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  new Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: new Text(
+                      "Loading",
+                      style: TextStyle(fontSize: 16.0),
+                    ),
+                  ),
+                  new LinearProgressIndicator(
+                    value: progress / progressMax,
+                  ),
+                ],
+              ),
+            ),
+          );
+  }
+
   @override
   EdgeInsets buildListPadding() {
     return EdgeInsets.symmetric(vertical: 8.0);
@@ -42,55 +71,65 @@ class _HistoryPageState extends ParentPageState<HistoryPage> {
             Navigator.pop(context);
           });
         }
-        widget.youtubeServer.getInfoList(youtubes,
-            (List<YoutubeResult> results) {
-          widgets = List.generate(results.length, (int index) {
-            return new Music(results[index], onClick: () async {
-              await Musicplayer.instance.playTrack(widget.youtubeServer.host,
-                  results[index].toTrack(widget.apiKey));
-            }, onAddPlaylist: () {
-              fetchPlaylist(
-                false,
-                (List<Playlist> playlists) {
-                  viewUtils.showListDialog(
-                    context,
-                    'Select playlist',
-                    List.generate(
-                      playlists.length,
-                      (int index) {
-                        return playlists[index].name;
-                      },
-                    ),
-                    (int selected) {
-                      widget.playlistServer.addId(
-                        new PlaylistId(
-                            apikey: widget.apiKey,
-                            name: playlists[selected].name,
-                            id: results[index].id),
-                        () {},
-                        (int code, Object error) {
-                          if (code == codes.PlaylistIdAlreadyExists) {
-                            viewUtils.showMessageDialog(
-                                context, "Already in playlist!");
-                          } else {
-                            viewUtils.showServerNoReachable(context);
-                          }
+        widget.youtubeServer.getInfoList(
+          youtubes,
+          (List<YoutubeResult> results) {
+            widgets = List.generate(results.length, (int index) {
+              return new Music(results[index], onClick: () async {
+                await Musicplayer.instance.playTrack(widget.youtubeServer.host,
+                    results[index].toTrack(widget.apiKey));
+              }, onAddPlaylist: () {
+                fetchPlaylist(
+                  false,
+                  (List<Playlist> playlists) {
+                    viewUtils.showListDialog(
+                      context,
+                      'Select playlist',
+                      List.generate(
+                        playlists.length,
+                        (int index) {
+                          return playlists[index].name;
                         },
-                      );
-                    },
-                  );
-                },
-              );
-            }, onDownload: () async {
-              DownloadManager downloadManager = await DownloadManager.instance;
-              downloadManager.queue(context, results[index]);
-            }, horizontal: true);
-          });
-        }, (int code, Object error) {
-          viewUtils.showServerNoReachableCallback(context, () {
-            Navigator.pop(context);
-          });
-        });
+                      ),
+                      (int selected) {
+                        widget.playlistServer.addId(
+                          new PlaylistId(
+                              apikey: widget.apiKey,
+                              name: playlists[selected].name,
+                              id: results[index].id),
+                          () {},
+                          (int code, Object error) {
+                            if (code == codes.PlaylistIdAlreadyExists) {
+                              viewUtils.showMessageDialog(
+                                  context, "Already in playlist!");
+                            } else {
+                              viewUtils.showServerNoReachable(context);
+                            }
+                          },
+                        );
+                      },
+                    );
+                  },
+                );
+              }, onDownload: () async {
+                DownloadManager downloadManager =
+                    await DownloadManager.instance;
+                downloadManager.queue(context, results[index]);
+              }, horizontal: true);
+            });
+          },
+          (int code, Object error) {
+            viewUtils.showServerNoReachableCallback(context, () {
+              Navigator.pop(context);
+            });
+          },
+          (int progress) {
+            setState(() {
+              progressMax = youtubes.length.toDouble();
+              this.progress = progress.toDouble();
+            });
+          },
+        );
       }, (int code, Object error) {
         viewUtils.showServerNoReachableCallback(context, () {
           Navigator.pop(context);
