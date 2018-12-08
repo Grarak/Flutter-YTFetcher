@@ -76,6 +76,8 @@ class _PlaylistsPageState extends ParentPageState<PlaylistsPage> {
       );
     }
 
+    progressMax = null;
+    progress = null;
     return new SafeArea(
       child: new Column(
         children: <Widget>[

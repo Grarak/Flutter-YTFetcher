@@ -62,7 +62,7 @@ PODS:
   - SDWebImage/Core (4.4.3)
 
 DEPENDENCIES:
-  - Flutter (from `.symlinks/flutter/ios`)
+  - Flutter (from `.symlinks/flutter/ios-release`)
   - mmkv_plugin (from `.symlinks/plugins/mmkv_plugin/ios`)
   - musicplayer (from `.symlinks/plugins/musicplayer/ios`)
   - OGVKit/Ogg/Vorbis (from `https://github.com/Grarak/OGVKit.git`)
@@ -83,7 +83,7 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   Flutter:
-    :path: ".symlinks/flutter/ios"
+    :path: ".symlinks/flutter/ios-release"
   mmkv_plugin:
     :path: ".symlinks/plugins/mmkv_plugin/ios"
   musicplayer:
@@ -117,4 +117,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 3add41cc9806b44c33530ff313e2f05fa9806494
 
-COCOAPODS: 1.5.3
+COCOAPODS: 1.6.0.beta.1

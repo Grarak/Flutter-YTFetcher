@@ -8,8 +8,6 @@ import 'utils.dart' as utils;
 import 'api/youtube_server.dart';
 import 'view_utils.dart' as viewUtils;
 
-int _currentlyDownloading = 0;
-
 abstract class DownloadListener {
   void onDownloadComplete(Download download);
 
@@ -17,6 +15,7 @@ abstract class DownloadListener {
 }
 
 class Download {
+  final DownloadManager _manager;
   final Directory _root;
   YoutubeServer server;
   final YoutubeResult youtubeResult;
@@ -25,7 +24,7 @@ class Download {
   HttpClient _client;
   bool _closed = false;
 
-  Download(this._root, this.youtubeResult);
+  Download(this._manager, this._root, this.youtubeResult);
 
   File get _file => new File("${_root.path}/$_fileName");
 
@@ -68,13 +67,12 @@ class Download {
       _downloadFile.createSync();
     }
 
-    _currentlyDownloading++;
-
-    if (_currentlyDownloading > 5) {
+    if (_manager._activeDownloads > 5) {
       _startDownloadDelayed();
       return;
     }
 
+    _manager._activeDownloads++;
     server?.close();
     server = new YoutubeServer(host);
     server.fetchSong(
@@ -85,6 +83,9 @@ class Download {
           HttpClientRequest request;
           try {
             request = await _client.getUrl(Uri.parse(url));
+          } on Error catch (_) {
+            _startDownloadDelayed();
+            return;
           } on SocketException catch (_) {
             _startDownloadDelayed();
             return;
@@ -94,13 +95,12 @@ class Download {
           request.close().then((HttpClientResponse response) {
             _sink = file.openWrite(mode: FileMode.writeOnly);
             response.pipe(_sink).whenComplete(() {
-              _currentlyDownloading--;
               _client.close(force: true);
               file.renameSync(_file.path);
               for (DownloadListener listener in _listeners) {
                 listener.onDownloadComplete(this);
               }
-            }).catchError(() {
+            }).catchError((Object error) {
               _client.close(force: true);
               _startDownloadDelayed();
             });
@@ -159,6 +159,7 @@ class DownloadManager implements DownloadListener {
   final Directory _root;
   final List<Download> downloads;
   DownloadManagerListener listener;
+  int _activeDownloads = 0;
 
   DownloadManager(this._root, this.downloads);
 
@@ -186,7 +187,7 @@ class DownloadManager implements DownloadListener {
   }
 
   Download _createDownload(YoutubeResult result) {
-    Download download = new Download(_root, result);
+    Download download = new Download(this, _root, result);
     download.addListener(this);
     return download;
   }
@@ -234,11 +235,13 @@ class DownloadManager implements DownloadListener {
   @override
   void onDownloadComplete(Download download) {
     listener?.onDownloadCompleted(download);
+    _activeDownloads--;
   }
 
   @override
   void onDownloadDelete(Download download) {
     downloads.remove(download);
     listener?.onDownloadDeleted(download);
+    _activeDownloads--;
   }
 }

@@ -87,19 +87,25 @@ class _MusicControlPageState extends State<_MusicControlPage>
           child: new Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              new Text(
-                titles[0],
-                textAlign: TextAlign.center,
-                style: new TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.0,
+              new Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: new Text(
+                  titles[0],
+                  textAlign: TextAlign.center,
+                  style: new TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.0,
+                  ),
                 ),
               ),
-              new Text(
-                titles[1],
-                textAlign: TextAlign.center,
-                style: new TextStyle(
-                  fontSize: 15.0,
+              new Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: new Text(
+                  titles[1],
+                  textAlign: TextAlign.center,
+                  style: new TextStyle(
+                    fontSize: 15.0,
+                  ),
                 ),
               ),
             ],
