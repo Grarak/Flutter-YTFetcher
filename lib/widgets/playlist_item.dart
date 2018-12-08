@@ -24,17 +24,6 @@ class PlaylistItem extends StatelessWidget {
                   style: TextStyle(),
                 ),
               ),
-              new Padding(
-                padding: EdgeInsets.only(right: 16.0),
-                child: new Text(
-                  "Public".toUpperCase(),
-                  style: new TextStyle(
-                    fontSize: 12.0,
-                    color: Colors.black,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
               new PopupMenuButton<int>(
                 padding: EdgeInsets.zero,
                 icon: new Icon(Icons.more_vert),

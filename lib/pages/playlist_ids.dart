@@ -79,9 +79,9 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
 
   @override
   void dispose() {
-    super.dispose();
-
     setIds();
+
+    super.dispose();
   }
 
   @override
@@ -160,10 +160,16 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
                     onSelected: (int selection) async {
                       switch (selection) {
                         case 0:
-                          setState(() {
+                          if (widget.results.length == 1) {
                             needsUpdate = true;
                             widget.results.remove(item);
-                          });
+                            onBackClick();
+                          } else {
+                            setState(() {
+                              needsUpdate = true;
+                              widget.results.remove(item);
+                            });
+                          }
                           break;
                         case 1:
                           int index = widget.results.indexOf(item);
