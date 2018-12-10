@@ -47,8 +47,6 @@ class _MusicControlPageState extends State<_MusicControlPage>
   List<MusicTrack> _tracks;
   int _currentPosition;
 
-  PageController _pageController;
-
   @override
   void initState() {
     super.initState();
@@ -65,17 +63,9 @@ class _MusicControlPageState extends State<_MusicControlPage>
   }
 
   @override
-  void didUpdateWidget(_MusicControlPage oldWidget) {
-    _pageController?.jumpToPage(_currentPosition);
-
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
   void dispose() {
-    super.dispose();
-
     Musicplayer.instance.removeListener(this);
+    super.dispose();
   }
 
   Widget _trackBuilder(MusicTrack currentTrack) {
@@ -114,6 +104,7 @@ class _MusicControlPageState extends State<_MusicControlPage>
         ),
         new Expanded(
           child: new PageView.builder(
+            key: UniqueKey(),
             itemBuilder: (BuildContext context, int index) {
               return new Container(
                 padding: EdgeInsets.only(left: 16.0, right: 16.0, bottom: 45.0),
@@ -127,12 +118,10 @@ class _MusicControlPageState extends State<_MusicControlPage>
               );
             },
             itemCount: _tracks.length,
-            controller: _pageController == null
-                ? _pageController = new PageController(
-                    initialPage: _currentPosition,
-                    viewportFraction: 0.75,
-                  )
-                : _pageController,
+            controller: new PageController(
+              initialPage: _currentPosition,
+              viewportFraction: 0.75,
+            ),
             onPageChanged: (int page) {
               if (page != _currentPosition) {
                 Musicplayer.instance.playTracks(widget.host, _tracks, page);
@@ -282,9 +271,6 @@ class _MusicControlPageState extends State<_MusicControlPage>
         _state = PlayingState.FAILED;
         _tracks = tracks;
         _currentPosition = position;
-        if (_pageController != null) {
-          _pageController.jumpToPage(_currentPosition);
-        }
       });
     }
   }
@@ -297,9 +283,6 @@ class _MusicControlPageState extends State<_MusicControlPage>
         _state = state;
         _tracks = tracks;
         _currentPosition = position;
-        if (_pageController != null) {
-          _pageController.jumpToPage(_currentPosition);
-        }
       });
     }
   }

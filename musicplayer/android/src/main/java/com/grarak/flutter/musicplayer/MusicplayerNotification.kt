@@ -1,172 +1,185 @@
 package com.grarak.flutter.musicplayer
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
-import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
+import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.app.NotificationCompat.MediaStyle
+import android.support.v4.media.session.MediaButtonReceiver
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import com.bumptech.glide.Glide
 import com.grarak.flutter.musicplayer.musicplayer.R
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.regex.Pattern
+import java.lang.ref.WeakReference
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
-class MusicplayerNotification internal constructor(private val service: MusicplayerService) {
+class MusicplayerNotification(private val mService: MusicplayerService) {
+
+    private val mExecutor = Executors.newSingleThreadExecutor()
+
+    init {
+        val manager = mService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.cancelAll()
+    }
+
+    fun showNotification(musicTrack: MusicTrack, state: PlaybackStateCompat,
+                         session: MediaSessionCompat) {
+        mExecutor.submit(Loader(WeakReference(mService), musicTrack, state, session))
+    }
+
+    fun destroy() {
+        mService.stopForeground(true)
+    }
+
+    private class Loader(private val mServiceRef: WeakReference<MusicplayerService>,
+                         private val mMusicTrack: MusicTrack,
+                         private val mState: PlaybackStateCompat,
+                         private val mSession: MediaSessionCompat) : Runnable {
+
+        private fun getBitmap(context: Context, url: String): Bitmap {
+            return try {
+                Glide.with(context).asBitmap().load(url).submit().get(250, TimeUnit.MILLISECONDS)
+            } catch (ignored: Exception) {
+                return BitmapFactory.decodeResource(context.resources, R.drawable.ic_alert_circle_outline)
+            }
+        }
+
+        private fun buildNotification(context: Context): Notification? {
+            val intent = context.packageManager.getLaunchIntentForPackage("com.grarak.flutter.ytfetcher")!!
+            intent.setPackage(null)
+
+            val contentIntent = PendingIntent.getActivity(context, 0, intent, 0)
+
+            val bitmap = getBitmap(context, mMusicTrack.thumbnail)
+
+            when (mState.state) {
+                PlaybackStateCompat.STATE_CONNECTING -> {
+                    return NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
+                            .setContentTitle(context.getString(R.string.loading))
+                            .setContentText(mMusicTrack.title)
+                            .setSmallIcon(R.drawable.ic_music_box)
+                            .setLargeIcon(bitmap)
+                            .setProgress(0, 0, true)
+                            .setContentIntent(contentIntent)
+                            .build()
+                }
+                PlaybackStateCompat.STATE_PLAYING, PlaybackStateCompat.STATE_PAUSED -> {
+                    val titles = mMusicTrack.formatResultTitle()
+
+                    val metadata = mMusicTrack.toMetadataBuilder()
+                            .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, bitmap)
+                            .build()
+                    mSession.setMetadata(metadata)
+
+                    val description = metadata.description
+
+                    val builder = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
+                    builder.setStyle(MediaStyle()
+                            .setMediaSession(mSession.sessionToken)
+                            .setShowActionsInCompactView(0, 1, 2)
+                            .setShowCancelButton(true)
+                            .setCancelButtonIntent(
+                                    MediaButtonReceiver.buildMediaButtonPendingIntent(context,
+                                            PlaybackStateCompat.ACTION_STOP)))
+                            .setSmallIcon(R.drawable.ic_music_box)
+                            .setContentTitle(description.title)
+                            .setContentText(description.subtitle)
+                            .setLargeIcon(bitmap)
+                            .setContentIntent(contentIntent)
+                            .setDeleteIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(
+                                    context, PlaybackStateCompat.ACTION_STOP))
+                            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+
+                    // If skip to next action is enabled.
+                    if (mState.actions and PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS != 0L) {
+                        builder.addAction(NotificationCompat.Action(
+                                R.drawable.ic_skip_previous,
+                                context.getString(R.string.previous),
+                                MediaButtonReceiver.buildMediaButtonPendingIntent(
+                                        context,
+                                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)))
+                    }
+
+                    builder.addAction(if (mState.state == PlaybackStateCompat.STATE_PLAYING) {
+                        NotificationCompat.Action(
+                                R.drawable.ic_pause,
+                                context.getString(R.string.pause),
+                                MediaButtonReceiver.buildMediaButtonPendingIntent(
+                                        context,
+                                        PlaybackStateCompat.ACTION_PAUSE))
+                    } else {
+                        NotificationCompat.Action(
+                                R.drawable.ic_play,
+                                context.getString(R.string.play),
+                                MediaButtonReceiver.buildMediaButtonPendingIntent(
+                                        context,
+                                        PlaybackStateCompat.ACTION_PLAY))
+                    })
+
+                    // If skip to prev action is enabled.
+                    if (mState.actions and PlaybackStateCompat.ACTION_SKIP_TO_NEXT != 0L) {
+                        builder.addAction(NotificationCompat.Action(
+                                R.drawable.ic_skip_next,
+                                context.getString(R.string.next),
+                                MediaButtonReceiver.buildMediaButtonPendingIntent(
+                                        context,
+                                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT)))
+                    }
+
+                    return builder.build()
+                }
+                PlaybackStateCompat.STATE_ERROR -> {
+                    return NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
+                            .setContentTitle(context.getString(R.string.failed))
+                            .setContentText(mMusicTrack.title)
+                            .setSmallIcon(R.drawable.ic_music_box)
+                            .setLargeIcon(bitmap)
+                            .setContentIntent(contentIntent)
+                            .build()
+                }
+            }
+            return null
+        }
+
+        override fun run() {
+            val service = mServiceRef.get()
+            service?.run {
+                val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                        && manager.getNotificationChannel(NOTIFICATION_CHANNEL) == null) {
+                    val channel = NotificationChannel(
+                            NOTIFICATION_CHANNEL, service.getString(R.string.music_player),
+                            NotificationManager.IMPORTANCE_LOW)
+                    channel.setSound(null, null)
+
+                    manager.createNotificationChannel(channel)
+                }
+
+                val notification = buildNotification(this)
+                notification?.let {
+                    when (mState.state) {
+                        PlaybackStateCompat.STATE_CONNECTING, PlaybackStateCompat.STATE_PLAYING -> {
+                            startForeground(NOTIFICATION_ID, it)
+                        }
+                        PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.STATE_ERROR -> {
+                            stopForeground(false)
+                            manager.notify(NOTIFICATION_ID, it)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     companion object {
         private const val NOTIFICATION_ID = 1
         private const val NOTIFICATION_CHANNEL = "music_channel"
-    }
-
-    private val manager: NotificationManager = service.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-    private val fetching = AtomicBoolean()
-    private val playing = AtomicBoolean()
-    private var track: MusicTrack? = null
-    private var playingBitmap: Bitmap? = null
-
-    init {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel()
-        }
-    }
-
-    private fun getBitmap(url: String): Bitmap {
-        return try {
-            Glide.with(service).asBitmap().load(url).submit().get()
-        } catch (ignored: Exception) {
-            return BitmapFactory.decodeResource(service.resources, R.drawable.ic_alert_circle_outline)
-        }
-    }
-
-    private fun getBroadcast(action: String): PendingIntent {
-        return PendingIntent.getBroadcast(service, 0, Intent(action), 0)
-    }
-
-    internal fun showProgress(track: MusicTrack) {
-        fetching.set(true)
-        playing.set(false)
-        this.track = track
-
-        val builder = NotificationCompat.Builder(service, NOTIFICATION_CHANNEL)
-                .setContentTitle(service.getString(R.string.loading))
-                .setContentText(track.title)
-                .setSmallIcon(R.drawable.ic_music_box)
-                .setProgress(0, 0, true)
-
-        service.startForeground(NOTIFICATION_ID, builder.build())
-    }
-
-    internal fun showFailure(track: MusicTrack) {
-        fetching.set(false)
-        playing.set(false)
-        this.track = track
-
-        val builder = NotificationCompat.Builder(service, NOTIFICATION_CHANNEL)
-                .setContentTitle(service.getString(R.string.failed))
-                .setContentText(track.title)
-                .setSmallIcon(R.drawable.ic_music_box)
-
-        manager.notify(NOTIFICATION_ID, builder.build())
-        service.stopForeground(false)
-    }
-
-    internal fun showPlay(track: MusicTrack) {
-        fetching.set(false)
-        playing.set(true)
-        this.track = track
-        Thread {
-            playingBitmap = getBitmap(track.thumbnail)
-            val builder = baseBuilder(track, playingBitmap!!, true)
-
-            service.startForeground(NOTIFICATION_ID, builder.build())
-        }.start()
-    }
-
-    internal fun showPause() {
-        fetching.set(false)
-        playing.set(false)
-        track?.run {
-            Thread {
-                if (playingBitmap == null) {
-                    playingBitmap = getBitmap(thumbnail)
-                }
-                val builder = baseBuilder(this, playingBitmap!!, false)
-                        .setAutoCancel(true)
-
-                service.startForeground(NOTIFICATION_ID, builder.build())
-            }.start()
-        }
-    }
-
-    internal fun stop() {
-        manager.cancel(NOTIFICATION_ID)
-    }
-
-    private fun baseBuilder(
-            track: MusicTrack, bitmap: Bitmap, play: Boolean): NotificationCompat.Builder {
-
-        val titleFormatted = formatResultTitle(track)
-
-        val mediaStyle = android.support.v4.media.app.NotificationCompat.DecoratedMediaCustomViewStyle()
-        mediaStyle.setShowActionsInCompactView(2)
-
-        return NotificationCompat.Builder(service, NOTIFICATION_CHANNEL)
-                .setContentTitle(titleFormatted[1])
-                .setContentText(titleFormatted[0])
-                .setSubText(track.duration)
-                .setSmallIcon(R.drawable.ic_music_box)
-                .setLargeIcon(bitmap)
-                .addAction(NotificationCompat.Action(
-                        if (play) R.drawable.ic_pause else R.drawable.ic_play,
-                        service.getString(if (play) R.string.pause else R.string.play),
-                        getBroadcast(MusicplayerService.ACTION_MUSIC_PLAY_PAUSE)))
-                .addAction(NotificationCompat.Action(
-                        R.drawable.ic_skip_next,
-                        service.getString(R.string.next),
-                        getBroadcast(MusicplayerService.ACTION_MUSIC_NEXT)))
-                .addAction(NotificationCompat.Action(
-                        R.drawable.ic_stop,
-                        service.getString(R.string.stop),
-                        getBroadcast(MusicplayerService.ACTION_MUSIC_PLAYER_STOP)))
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setStyle(mediaStyle)
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    private fun createNotificationChannel() {
-        if (manager.getNotificationChannel(NOTIFICATION_CHANNEL) != null) {
-            return
-        }
-        val channel = NotificationChannel(
-                NOTIFICATION_CHANNEL, service.getString(R.string.music_player),
-                NotificationManager.IMPORTANCE_LOW)
-        channel.setSound(null, null)
-
-        manager.createNotificationChannel(channel)
-    }
-
-    private fun formatResultTitle(track: MusicTrack): Array<String?> {
-        val matcher = Pattern.compile("(.+)[:|-](.+)").matcher(track.title)
-        if (matcher.matches()) {
-            return arrayOf(matcher.group(1).trim(), matcher.group(2).trim())
-        }
-
-        var title = track.title
-        var contentText = track.id
-        if (title.length > 20) {
-            val tmp = title.substring(20)
-            val whitespaceIndex = tmp.indexOf(' ')
-            if (whitespaceIndex >= 0) {
-                val firstWhitespace = 20 + tmp.indexOf(' ')
-                contentText = title.substring(firstWhitespace + 1)
-                title = title.substring(0, firstWhitespace)
-            }
-        }
-        return arrayOf(title, contentText)
     }
 }

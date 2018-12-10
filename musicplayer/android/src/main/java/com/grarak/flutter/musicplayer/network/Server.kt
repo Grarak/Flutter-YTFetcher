@@ -4,7 +4,7 @@ import java.io.Closeable
 import java.util.*
 import java.util.concurrent.Executors
 
-open class Server(public var url: String) : Closeable {
+open class Server(var url: String) : Closeable {
     companion object {
         private const val API_VERSION = "v1"
     }
@@ -31,8 +31,8 @@ open class Server(public var url: String) : Closeable {
         }
         executor.execute {
             request.doRequest(url, null, null, object : Request.RequestCallback {
-                override fun onConnect(request: Request, status: Int, url: String) {
-                    requestCallback.onConnect(request, status, url)
+                override fun onConnect(request: Request, status: Int, url: String): Boolean {
+                    return requestCallback.onConnect(request, status, url)
                 }
 
                 override fun onSuccess(request: Request, status: Int,
@@ -54,8 +54,9 @@ open class Server(public var url: String) : Closeable {
         }
         executor.execute {
             request.doRequest(url, "application/json", data, object : Request.RequestCallback {
-                override fun onConnect(request: Request, status: Int, url: String) {
-                    requestCallback?.onConnect(request, status, url)
+                override fun onConnect(request: Request, status: Int, url: String): Boolean {
+                    val connect = requestCallback?.onConnect(request, status, url)
+                    return connect == null || connect
                 }
 
                 override fun onSuccess(request: Request, status: Int,

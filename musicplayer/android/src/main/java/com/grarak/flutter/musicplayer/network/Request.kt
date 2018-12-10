@@ -16,7 +16,7 @@ class Request internal constructor() : Closeable {
     private val closed = AtomicBoolean()
 
     interface RequestCallback {
-        fun onConnect(request: Request, status: Int, url: String)
+        fun onConnect(request: Request, status: Int, url: String): Boolean
 
         fun onSuccess(request: Request, status: Int,
                       headers: Map<String, List<String>>, response: String)
@@ -26,6 +26,8 @@ class Request internal constructor() : Closeable {
 
     internal fun doRequest(url: String, contentType: String?,
                            data: String?, requestCallback: RequestCallback) {
+        Thread.currentThread()
+
         closed.set(false)
         var outputStream: DataOutputStream? = null
 
@@ -68,16 +70,40 @@ class Request internal constructor() : Closeable {
                     }
                 }
 
-                handler.post { requestCallback.onConnect(this@Request, statusCode, url) }
+                val connectWait = Object()
+                var connect = false
+                handler.post {
+                    connect = requestCallback.onConnect(this@Request, statusCode, url)
+                    synchronized(connectWait) {
+                        connectWait.notifyAll()
+                    }
+                }
+                synchronized(connectWait) {
+                    connectWait.wait()
+                }
+                closed.set(!connect)
                 val inputStream = if (statusCode < 200 || statusCode >= 300) errorStream else inputStream
 
-                val response = inputStream.bufferedReader().use {
-                    it.readText()
+                if (closed.get()) {
+                    disconnect()
                 }
+                val response = StringBuilder()
+                val reader = inputStream.bufferedReader().apply {
+                    var line = readLine()
+                    while (line != null && !closed.get()) {
+                        response.append(line).append('\n')
+                        line = readLine()
+                    }
+                }
+                reader.close()
 
-                handler.post {
-                    requestCallback.onSuccess(this@Request, statusCode,
-                            connection!!.headerFields, response)
+                if (!closed.get()) {
+                    handler.post {
+                        requestCallback.onSuccess(this@Request, statusCode,
+                                connection!!.headerFields, response.toString())
+                    }
+                } else {
+                    disconnect()
                 }
             }
         } catch (e: IOException) {
@@ -96,8 +122,5 @@ class Request internal constructor() : Closeable {
 
     override fun close() {
         closed.set(true)
-        Thread {
-            connection?.disconnect()
-        }.start()
     }
 }

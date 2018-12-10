@@ -13,7 +13,9 @@ class YoutubeServer : Server("") {
 
     fun fetchSong(youtube: Youtube, youtubeSongIdCallback: YoutubeSongIdCallback) {
         post(getApiUrl("youtube/fetch"), youtube.toString(), object : Request.RequestCallback {
-            override fun onConnect(request: Request, status: Int, url: String) {}
+            override fun onConnect(request: Request, status: Int, url: String): Boolean {
+                return true
+            }
 
             override fun onSuccess(request: Request, status: Int,
                                    headers: Map<String, List<String>>, response: String) {
@@ -42,13 +44,13 @@ class YoutubeServer : Server("") {
                     + URLEncoder.encode(id)
                     + "&url=" + URLEncoder.encode(url))
 
-            override fun onConnect(request: Request, status: Int, url: String) {
-                request.close()
+            override fun onConnect(request: Request, status: Int, url: String): Boolean {
                 if (status in 200..299) {
                     youtubeSongIdCallback.onSuccess(url)
                 } else {
                     verifyForwardedSong()
                 }
+                return false
             }
 
             override fun onSuccess(request: Request, status: Int, headers: Map<String, List<String>>, response: String) {}
@@ -59,9 +61,9 @@ class YoutubeServer : Server("") {
 
             private fun verifyForwardedSong() {
                 get(newUrl, object : Request.RequestCallback {
-                    override fun onConnect(request: Request, status: Int, url: String) {
-                        request.close()
+                    override fun onConnect(request: Request, status: Int, url: String): Boolean {
                         youtubeSongIdCallback.onSuccess(url)
+                        return false
                     }
 
                     override fun onSuccess(request: Request, status: Int, headers: Map<String, List<String>>, response: String) {}

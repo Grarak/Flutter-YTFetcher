@@ -26,10 +26,10 @@ class ExoPlayerWrapper(context: Context) : Player.EventListener {
     var onPlayerListener: OnPlayerListener? = null
 
     val currentPosition: Float
-        get() = (exoPlayer.currentPosition / 1000).toFloat()
+        get() = exoPlayer.currentPosition.toFloat() / 1000
 
     val duration: Float
-        get() = (exoPlayer.duration / 1000).toFloat()
+        get() = exoPlayer.duration.toFloat() / 1000
 
     val isPlaying: Boolean
         get() = getState() == State.PLAYING
@@ -44,6 +44,8 @@ class ExoPlayerWrapper(context: Context) : Player.EventListener {
     interface OnPlayerListener {
         fun onPrepared(exoPlayer: ExoPlayerWrapper)
 
+        fun onSeekComplete(exoPlayer: ExoPlayerWrapper)
+
         fun onCompletion(exoPlayer: ExoPlayerWrapper)
 
         fun onError(exoPlayer: ExoPlayerWrapper, error: ExoPlaybackException)
@@ -52,7 +54,7 @@ class ExoPlayerWrapper(context: Context) : Player.EventListener {
     init {
         val renderersFactory = DefaultRenderersFactory(context,
                 DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
-        exoPlayer = ExoPlayerFactory.newSimpleInstance(renderersFactory, DefaultTrackSelector())
+        exoPlayer = ExoPlayerFactory.newSimpleInstance(context, renderersFactory, DefaultTrackSelector())
         exoPlayer.addListener(this)
         dataSourceFactory = DefaultDataSourceFactory(context,
                 Util.getUserAgent(context, "MusicplayerPlugin"))
@@ -90,12 +92,18 @@ class ExoPlayerWrapper(context: Context) : Player.EventListener {
 
     fun play() {
         setState(State.PLAYING)
+        exoPlayer.seekTo(exoPlayer.currentPosition)
         exoPlayer.playWhenReady = true
     }
 
     fun pause() {
         setState(State.PAUSED)
         exoPlayer.playWhenReady = false
+    }
+
+    fun stop() {
+        setState(State.IDLE)
+        exoPlayer.stop()
     }
 
     fun release() {
@@ -136,7 +144,9 @@ class ExoPlayerWrapper(context: Context) : Player.EventListener {
 
     override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {}
 
-    override fun onSeekProcessed() {}
+    override fun onSeekProcessed() {
+        onPlayerListener?.onSeekComplete(this)
+    }
 
     private fun setState(state: State) {
         synchronized(stateLock) {

@@ -1,349 +1,400 @@
 package com.grarak.flutter.musicplayer
 
-import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.media.AudioFocusRequest
 import android.media.AudioManager
-import android.os.Binder
 import android.os.Build
-import android.os.IBinder
+import android.os.Bundle
+import android.support.v4.media.MediaBrowserCompat
+import android.support.v4.media.MediaBrowserServiceCompat
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.ExoPlaybackException
 import com.google.android.exoplayer2.audio.AudioAttributes
-import com.grarak.flutter.musicplayer.network.*
+import com.grarak.flutter.musicplayer.network.History
+import com.grarak.flutter.musicplayer.network.HistoryServer
+import com.grarak.flutter.musicplayer.network.Youtube
+import com.grarak.flutter.musicplayer.network.YoutubeServer
 import io.flutter.util.PathUtils
 import java.io.File
-import java.nio.file.Path
-import java.util.*
 
-class MusicplayerService : Service(), AudioManager.OnAudioFocusChangeListener, ExoPlayerWrapper.OnPlayerListener {
-    companion object {
-        private val NAME = MusicplayerService::class.java.name
-        val ACTION_MUSIC_PLAYER_STOP = "$NAME.ACTION.MUSIC_PLAYER_STOP"
-        val ACTION_MUSIC_PLAY_PAUSE = "$NAME.ACTION.MUSIC_PLAY_PAUSE"
-        val ACTION_MUSIC_PREVIOUS = "$NAME.ACTION.MUSIC_PREVIOUS"
-        val ACTION_MUSIC_NEXT = "$NAME.ACTION.MUSIC_NEXT"
-    }
 
-    private val binder = MusicPlayerBinder()
+class MusicplayerService : MediaBrowserServiceCompat(), ExoPlayerWrapper.OnPlayerListener, AudioManager.OnAudioFocusChangeListener {
 
-    private val youtubeServer = YoutubeServer()
-    private val historyServer = HistoryServer()
-    private lateinit var exoPlayer: ExoPlayerWrapper
-    private lateinit var notification: MusicplayerNotification
-    private lateinit var audioManager: AudioManager
-    var listener: MusicPlayerListener? = null
+    private val mYoutubeServer = YoutubeServer()
+    private val mHistoryServer = HistoryServer()
 
-    private lateinit var audioFocusRequest: AudioFocusRequest
+    private lateinit var mExoPlayer: ExoPlayerWrapper
+    private lateinit var mNotification: MusicplayerNotification
+    private lateinit var mSession: MediaSessionCompat
+    private val mSessionCallback = MediaSessionCallback()
 
-    private val focusLock = Any()
-    private var playbackDelayed: Boolean = false
-    private var resumeOnFocusGain: Boolean = false
+    private val mTrackLock = Any()
 
-    private val trackLock = Any()
-    private val tracks = ArrayList<MusicTrack>()
-    private var preparing: Boolean = false
-    var trackPosition = -1
-        private set
-    private var lastMusicPosition: Float = .0f
+    private var mPreparing = false
+    private var mTrackPosition: Int = 0
+    private val mTracks = ArrayList<MusicTrack>()
+    private var mState: Int = 0
+        set(value) {
+            synchronized(mTrackLock) {
+                field = value
 
-    private val receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == ACTION_MUSIC_PLAYER_STOP) {
-                stopForeground(true)
-                if (listener != null) {
-                    listener!!.onDisconnect()
-                } else {
-                    stopSelf()
-                }
-            } else if (intent.action == ACTION_MUSIC_PLAY_PAUSE) {
-                if (isPlaying) {
-                    pauseMusic()
-                } else {
-                    requestAudioFocus()
-                }
-            } else if (intent.action == ACTION_MUSIC_PREVIOUS) {
-                synchronized(trackLock) {
-                    if (trackPosition - 1 >= 0 && trackPosition - 1 < tracks.size) {
-                        playMusic(youtubeServer.url, tracks, trackPosition - 1)
+                var actions = PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                when (value) {
+                    PlaybackStateCompat.STATE_PLAYING -> {
+                        actions = actions or
+                                PlaybackStateCompat.ACTION_PAUSE or
+                                PlaybackStateCompat.ACTION_SEEK_TO
+
+                    }
+                    PlaybackStateCompat.STATE_PAUSED -> {
+                        actions = actions or
+                                PlaybackStateCompat.ACTION_PLAY or
+                                PlaybackStateCompat.ACTION_SEEK_TO
                     }
                 }
-            } else if (intent.action == ACTION_MUSIC_NEXT) {
-                synchronized(trackLock) {
-                    if (trackPosition != -1 && trackPosition + 1 < tracks.size) {
-                        playMusic(youtubeServer.url, tracks, trackPosition + 1)
-                    }
-                }
-            } else if (intent.action == AudioManager.ACTION_AUDIO_BECOMING_NOISY) {
-                pauseMusic()
+
+                val bundle = Bundle()
+                bundle.putParcelableArrayList("tracks", mTracks)
+                bundle.putInt("position", mTrackPosition)
+                bundle.putFloat("duration", mExoPlayer.duration)
+
+                val state = PlaybackStateCompat.Builder()
+                        .setActions(actions)
+                        .setExtras(bundle)
+                        .setState(value, (mExoPlayer.currentPosition * 1000).toLong(), 1f)
+                        .build()
+                mSession.setPlaybackState(state)
+                mNotification.showNotification(mTracks[mTrackPosition], state, mSession)
             }
-
-            Log.i(intent.action)
-        }
-    }
-
-    val isPlaying: Boolean
-        get() = synchronized(trackLock) {
-            return exoPlayer.isPlaying && trackPosition >= 0
         }
 
-    val currentPosition: Float
-        get() = exoPlayer.currentPosition
+    private lateinit var mAudioManager: AudioManager
+    private lateinit var mAudioFocusRequest: AudioFocusRequest
 
-    val duration: Float
-        get() = exoPlayer.duration
-
-    val isPreparing: Boolean
-        get() = synchronized(trackLock) {
-            return preparing && trackPosition >= 0
-        }
-
-    inner class MusicPlayerBinder : Binder() {
-        val service: MusicplayerService
-            get() = this@MusicplayerService
-    }
+    private val mFocusLock = Any()
+    private var mPlaybackDelayed: Boolean = false
+    private var mResumeOnFocusGain: Boolean = false
 
     override fun onCreate() {
         super.onCreate()
 
-        exoPlayer = ExoPlayerWrapper(this)
-        exoPlayer.onPlayerListener = this
-        val audioAttributes = AudioAttributes.Builder()
+        mExoPlayer = ExoPlayerWrapper(this)
+        mExoPlayer.onPlayerListener = this
+        mExoPlayer.setAudioAttributes(AudioAttributes.Builder()
                 .setContentType(C.CONTENT_TYPE_MUSIC)
-                .setUsage(C.USAGE_MEDIA).build()
-        exoPlayer.setAudioAttributes(audioAttributes)
+                .setUsage(C.USAGE_MEDIA).build())
+
+        mNotification = MusicplayerNotification(this)
+
+        mAudioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            mAudioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                     .setAcceptsDelayedFocusGain(true)
                     .setWillPauseWhenDucked(true)
                     .setOnAudioFocusChangeListener(this)
                     .build()
         }
 
-        notification = MusicplayerNotification(this)
+        mSession = MediaSessionCompat(this, "Musicplayer")
+        mSession.setCallback(mSessionCallback)
+        mSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS
+                or MediaSessionCompat.FLAG_HANDLES_QUEUE_COMMANDS
+                or MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
+        sessionToken = mSession.sessionToken
 
-        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        registerReceiver(mReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
+    }
 
-        val filter = IntentFilter()
-        filter.addAction(ACTION_MUSIC_PLAYER_STOP)
-        filter.addAction(ACTION_MUSIC_PLAY_PAUSE)
-        filter.addAction(ACTION_MUSIC_PREVIOUS)
-        filter.addAction(ACTION_MUSIC_NEXT)
-        filter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
-        filter.addAction(Intent.ACTION_MEDIA_BUTTON)
-        registerReceiver(receiver, filter)
+    override fun onDestroy() {
+        super.onDestroy()
+
+        unregisterReceiver(mReceiver)
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            mAudioManager.abandonAudioFocus(this)
+        }
+
+        mYoutubeServer.close()
+        mHistoryServer.close()
+
+        mExoPlayer.release()
+        mSession.release()
+
+        mNotification.destroy()
     }
 
     @Synchronized
-    fun playMusic(url: String, tracks: List<MusicTrack>, position: Int) {
-        pauseMusic()
-        youtubeServer.close()
+    fun playMusic(url: String, tracks: ArrayList<MusicTrack>, position: Int) {
+        mExoPlayer.stop()
+        mYoutubeServer.close()
 
-        synchronized(trackLock) {
-            preparing = true
-            trackPosition = position
-            lastMusicPosition = .0f
-            if (this.tracks !== tracks) {
-                this.tracks.clear()
-                this.tracks.addAll(tracks)
+        synchronized(mTrackLock) {
+            mPreparing = true
+            mTrackPosition = position
+            if (tracks !== mTracks) {
+                mTracks.clear()
+                mTracks.addAll(tracks)
+
+                val queue = ArrayList<MediaSessionCompat.QueueItem>()
+                for (item in tracksToMediaItems()) {
+                    queue.add(MediaSessionCompat.QueueItem(item.description, item.description.hashCode().toLong()))
+                }
+                mSession.setQueue(queue)
             }
         }
 
-        listener?.onPreparing(tracks, position)
+        if (!mSession.isActive) {
+            mSession.isActive = true
+        }
+
+        mState = PlaybackStateCompat.STATE_CONNECTING
 
         val track = tracks[position]
-        notification.showProgress(track)
 
         val youtube = Youtube()
         youtube.apikey = track.apiKey
         youtube.id = track.id
         youtube.addhistory = true
 
-        youtubeServer.url = url
-        historyServer.url = url
+        mYoutubeServer.url = url
+        mHistoryServer.url = url
 
         val file = File(PathUtils.getDataDirectory(this), youtube.id + ".ogg")
         if (file.exists()) {
-            exoPlayer.setFile(file)
+            mExoPlayer.setFile(file)
 
             val history = History()
             history.apikey = track.apiKey
             history.id = track.id
-            historyServer.add(history)
+            mHistoryServer.add(history)
             return
         }
 
-        youtubeServer.fetchSong(youtube, object : YoutubeServer.YoutubeSongIdCallback {
+        mYoutubeServer.fetchSong(youtube, object : YoutubeServer.YoutubeSongIdCallback {
             override fun onSuccess(url: String) {
-                exoPlayer.setUrl(url)
+                mExoPlayer.setUrl(url)
             }
 
             override fun onFailure(code: Int) {
-                listener?.onFailure(code, tracks, position)
-                synchronized(trackLock) {
-                    if (moveOn()) {
-                        playMusic(youtubeServer.url, tracks, trackPosition + 1)
-                    } else {
-                        trackPosition = -1
-                    }
-                }
-                notification.showFailure(track)
+                mState = PlaybackStateCompat.STATE_ERROR
+                next()
             }
         })
     }
 
-    fun resumeMusic() {
+    private fun play() {
+        synchronized(mTrackLock) {
+            if (!mExoPlayer.isPlaying) {
+                mExoPlayer.play()
+                mState = PlaybackStateCompat.STATE_PLAYING
+            }
+        }
+    }
+
+    private fun resume() {
         requestAudioFocus()
     }
 
-    private fun playMusic() {
-        synchronized(trackLock) {
-            if (trackPosition < 0) {
-                return
+    private fun pause() {
+        synchronized(mTrackLock) {
+            mExoPlayer.pause()
+            mState = PlaybackStateCompat.STATE_PAUSED
+            synchronized(mFocusLock) {
+                mResumeOnFocusGain = false
             }
-            seekTo(lastMusicPosition)
-            exoPlayer.play()
-            notification.showPlay(tracks[trackPosition])
-            listener?.onPlay(tracks, trackPosition)
         }
     }
 
-    fun pauseMusic() {
-        synchronized(trackLock) {
-            lastMusicPosition = currentPosition
-            exoPlayer.pause()
-            notification.showPause()
-            synchronized(focusLock) {
-                resumeOnFocusGain = false
+    private fun previous() {
+        synchronized(mTrackLock) {
+            if (getTrack(mTrackPosition - 1) != null) {
+                playMusic(mYoutubeServer.url, mTracks, mTrackPosition - 1)
             }
-            listener?.run {
-                if (trackPosition >= 0) {
-                    onPause(tracks, trackPosition)
+        }
+    }
+
+    private fun next() {
+        synchronized(mTrackLock) {
+            if (getTrack(mTrackPosition + 1) != null) {
+                playMusic(mYoutubeServer.url, mTracks, mTrackPosition + 1)
+            }
+        }
+    }
+
+    private fun getTrack(position: Int): MusicTrack? {
+        synchronized(mTrackLock) {
+            if (position >= 0 && position < mTracks.size) {
+                return mTracks[position]
+            }
+            return null
+        }
+    }
+
+    override fun onPrepared(exoPlayer: ExoPlayerWrapper) {
+        synchronized(mTrackLock) {
+            mPreparing = false
+            requestAudioFocus()
+        }
+    }
+
+    override fun onSeekComplete(exoPlayer: ExoPlayerWrapper) {
+        mState = mState
+    }
+
+    override fun onCompletion(exoPlayer: ExoPlayerWrapper) {
+        synchronized(mTrackLock) {
+            pause()
+            exoPlayer.seekTo(0f)
+            next()
+        }
+    }
+
+    override fun onError(exoPlayer: ExoPlayerWrapper, error: ExoPlaybackException) {
+        mState = PlaybackStateCompat.STATE_ERROR
+    }
+
+    override fun onAudioFocusChange(focusChange: Int) {
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> if (mPlaybackDelayed || mResumeOnFocusGain) {
+                synchronized(mFocusLock) {
+                    mPlaybackDelayed = false
+                    mResumeOnFocusGain = false
                 }
+                mExoPlayer.setVolume(1.0f)
+                play()
             }
-        }
-    }
-
-    fun seekTo(position: Float) {
-        lastMusicPosition = position
-        exoPlayer.seekTo(position)
-    }
-
-    fun getTracks(): List<MusicTrack> {
-        synchronized(trackLock) {
-            return Collections.unmodifiableList(tracks)
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                synchronized(mFocusLock) {
+                    mResumeOnFocusGain = false
+                    mPlaybackDelayed = false
+                }
+                pause()
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                synchronized(mFocusLock) {
+                    mResumeOnFocusGain = mExoPlayer.isPlaying
+                    mPlaybackDelayed = false
+                }
+                pause()
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                mExoPlayer.setVolume(0.2f)
+            }
         }
     }
 
     private fun requestAudioFocus() {
         val ret: Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            audioManager.requestAudioFocus(audioFocusRequest)
+            mAudioManager.requestAudioFocus(mAudioFocusRequest)
         } else {
-            audioManager.requestAudioFocus(this,
+            mAudioManager.requestAudioFocus(this,
                     AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
         }
-        synchronized(focusLock) {
+        synchronized(mFocusLock) {
             when (ret) {
-                AudioManager.AUDIOFOCUS_REQUEST_FAILED -> playbackDelayed = false
+                AudioManager.AUDIOFOCUS_REQUEST_FAILED -> mPlaybackDelayed = false
                 AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
-                    playbackDelayed = false
-                    playMusic()
+                    mPlaybackDelayed = false
+                    play()
                 }
-                AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> playbackDelayed = true
+                AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> mPlaybackDelayed = true
             }
         }
     }
 
-    override fun onCompletion(exoPlayer: ExoPlayerWrapper) {
-        pauseMusic()
-        synchronized(trackLock) {
-            if (moveOn()) {
-                playMusic(youtubeServer.url, tracks, trackPosition + 1)
-            } else {
-                lastMusicPosition = .0f
+    private val mReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY == intent?.action) {
+                pause()
             }
         }
     }
 
-    private fun moveOn(): Boolean {
-        return trackPosition >= 0 && trackPosition + 1 < tracks.size
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        stopSelf()
     }
 
-    override fun onError(exoPlayer: ExoPlayerWrapper, error: ExoPlaybackException) {
-        synchronized(trackLock) {
-            if (trackPosition >= 0) {
-                listener?.onFailure(Status.ServerOffline, tracks, trackPosition)
-                notification.showFailure(tracks[trackPosition])
-                if (moveOn()) {
-                    playMusic(youtubeServer.url, tracks, trackPosition + 1)
-                } else {
-                    trackPosition = -1
-                }
-            }
+    private inner class MediaSessionCallback : MediaSessionCompat.Callback() {
+        override fun onPlay() {
+            super.onPlay()
+            resume()
         }
-    }
 
-    override fun onPrepared(exoPlayer: ExoPlayerWrapper) {
-        synchronized(trackLock) {
-            preparing = false
-            requestAudioFocus()
+        override fun onPause() {
+            super.onPause()
+            pause()
         }
-    }
 
-    override fun onAudioFocusChange(focusChange: Int) {
-        try {
-            when (focusChange) {
-                AudioManager.AUDIOFOCUS_GAIN -> if (playbackDelayed || resumeOnFocusGain) {
-                    synchronized(focusLock) {
-                        playbackDelayed = false
-                        resumeOnFocusGain = false
+        override fun onStop() {
+            super.onStop()
+            pause()
+            mState = PlaybackStateCompat.STATE_STOPPED
+            mSession.isActive = false
+        }
+
+        override fun onCustomAction(action: String?, extras: Bundle?) {
+            super.onCustomAction(action, extras)
+
+            action?.run {
+                when (this) {
+                    PLAY_TRACKS -> {
+                        extras!!.run {
+                            val url = getString("url")
+                            val tracks = getParcelableArrayList<MusicTrack>("tracks")
+                            val position = getInt("position")
+
+                            playMusic(url!!, tracks!!, position)
+                        }
                     }
-                    exoPlayer.setVolume(1.0f)
-                    playMusic()
-                }
-                AudioManager.AUDIOFOCUS_LOSS -> {
-                    synchronized(focusLock) {
-                        resumeOnFocusGain = false
-                        playbackDelayed = false
-                    }
-                    pauseMusic()
-                }
-                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                    synchronized(focusLock) {
-                        resumeOnFocusGain = isPlaying
-                        playbackDelayed = false
-                    }
-                    pauseMusic()
                 }
             }
-        } catch (ignored: IllegalStateException) {
         }
 
-    }
+        override fun onSeekTo(pos: Long) {
+            super.onSeekTo(pos)
+            mExoPlayer.seekTo(pos.toFloat() / 1000)
+            mState = mState
+        }
 
-    override fun onDestroy() {
-        super.onDestroy()
+        override fun onSkipToPrevious() {
+            super.onSkipToPrevious()
+            previous()
+        }
 
-        notification.stop()
-
-        exoPlayer.release()
-        youtubeServer.close()
-        unregisterReceiver(receiver)
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            audioManager.abandonAudioFocus(this)
+        override fun onSkipToNext() {
+            super.onSkipToNext()
+            next()
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return Service.START_STICKY
+    private fun tracksToMediaItems(): ArrayList<MediaBrowserCompat.MediaItem> {
+        synchronized(mTrackLock) {
+            val items = ArrayList<MediaBrowserCompat.MediaItem>()
+            for (track in mTracks) {
+                items.add(MediaBrowserCompat.MediaItem(track.toMetadataBuilder().build().description,
+                        MediaBrowserCompat.MediaItem.FLAG_PLAYABLE))
+            }
+            return items
+        }
     }
 
-    override fun onBind(intent: Intent): IBinder? {
-        return binder
+    override fun onLoadChildren(parentId: String, result: Result<MutableList<MediaBrowserCompat.MediaItem>>) {
+        result.sendResult(tracksToMediaItems())
+    }
+
+    override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot? {
+        return BrowserRoot("root", null)
+    }
+
+    companion object {
+        const val PLAY_TRACKS = "play_tracks"
     }
 }
