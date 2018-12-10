@@ -18,10 +18,12 @@ import com.grarak.flutter.musicplayer.musicplayer.R
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 class MusicplayerNotification(private val mService: MusicplayerService) {
 
     private val mExecutor = Executors.newSingleThreadExecutor()
+    private val mDestroyed = AtomicBoolean()
 
     init {
         val manager = mService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -30,17 +32,18 @@ class MusicplayerNotification(private val mService: MusicplayerService) {
 
     fun showNotification(musicTrack: MusicTrack, state: PlaybackStateCompat,
                          session: MediaSessionCompat) {
-        mExecutor.submit(Loader(WeakReference(mService), musicTrack, state, session))
+        mExecutor.submit(Loader(WeakReference(mService), musicTrack, state, session, mDestroyed))
     }
 
     fun destroy() {
-        mService.stopForeground(true)
+        mDestroyed.set(true)
     }
 
     private class Loader(private val mServiceRef: WeakReference<MusicplayerService>,
                          private val mMusicTrack: MusicTrack,
                          private val mState: PlaybackStateCompat,
-                         private val mSession: MediaSessionCompat) : Runnable {
+                         private val mSession: MediaSessionCompat,
+                         private val mDestroyed: AtomicBoolean) : Runnable {
 
         private fun getBitmap(context: Context, url: String): Bitmap {
             return try {
@@ -170,6 +173,9 @@ class MusicplayerNotification(private val mService: MusicplayerService) {
 
                 val notification = buildNotification(this)
                 notification?.let {
+                    if (mDestroyed.get()) {
+                        return@let
+                    }
                     when (mState.state) {
                         PlaybackStateCompat.STATE_CONNECTING, PlaybackStateCompat.STATE_PLAYING -> {
                             startForeground(NOTIFICATION_ID, it)

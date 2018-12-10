@@ -43,8 +43,12 @@ class MusicplayerService : MediaBrowserServiceCompat(), ExoPlayerWrapper.OnPlaye
             synchronized(mTrackLock) {
                 field = value
 
-                var actions = if (mTracks.size > 1) PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT else 0L
+                var actions = PlaybackStateCompat.ACTION_STOP
+                if (mTracks.size > 1) {
+                    actions = actions or
+                            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                }
                 when (value) {
                     PlaybackStateCompat.STATE_PLAYING -> {
                         actions = actions or
@@ -113,6 +117,8 @@ class MusicplayerService : MediaBrowserServiceCompat(), ExoPlayerWrapper.OnPlaye
 
     override fun onDestroy() {
         super.onDestroy()
+
+        Log.i("Cleaning up")
 
         unregisterReceiver(mReceiver)
 
@@ -334,7 +340,6 @@ class MusicplayerService : MediaBrowserServiceCompat(), ExoPlayerWrapper.OnPlaye
 
         override fun onStop() {
             super.onStop()
-            pause()
             mState = PlaybackStateCompat.STATE_STOPPED
             mSession.isActive = false
         }

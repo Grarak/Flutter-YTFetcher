@@ -363,6 +363,8 @@ class _SeekState extends State<_Seek> {
   Widget build(BuildContext context) {
     if (_position == null ||
         _duration == null ||
+        !_position.isFinite ||
+        !_duration.isFinite ||
         _position < 0 ||
         _position > _duration) {
       return new CupertinoActivityIndicator();
