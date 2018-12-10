@@ -43,14 +43,13 @@ class MusicplayerService : MediaBrowserServiceCompat(), ExoPlayerWrapper.OnPlaye
             synchronized(mTrackLock) {
                 field = value
 
-                var actions = PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                var actions = if (mTracks.size > 1) PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT else 0L
                 when (value) {
                     PlaybackStateCompat.STATE_PLAYING -> {
                         actions = actions or
                                 PlaybackStateCompat.ACTION_PAUSE or
                                 PlaybackStateCompat.ACTION_SEEK_TO
-
                     }
                     PlaybackStateCompat.STATE_PAUSED -> {
                         actions = actions or

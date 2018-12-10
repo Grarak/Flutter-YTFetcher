@@ -10,7 +10,6 @@ import android.graphics.BitmapFactory
 import android.os.Build
 import android.support.v4.app.NotificationCompat
 import android.support.v4.media.MediaMetadataCompat
-import android.support.v4.media.app.NotificationCompat.MediaStyle
 import android.support.v4.media.session.MediaButtonReceiver
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -71,8 +70,6 @@ class MusicplayerNotification(private val mService: MusicplayerService) {
                             .build()
                 }
                 PlaybackStateCompat.STATE_PLAYING, PlaybackStateCompat.STATE_PAUSED -> {
-                    val titles = mMusicTrack.formatResultTitle()
-
                     val metadata = mMusicTrack.toMetadataBuilder()
                             .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, bitmap)
                             .build()
@@ -81,14 +78,7 @@ class MusicplayerNotification(private val mService: MusicplayerService) {
                     val description = metadata.description
 
                     val builder = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
-                    builder.setStyle(MediaStyle()
-                            .setMediaSession(mSession.sessionToken)
-                            .setShowActionsInCompactView(0, 1, 2)
-                            .setShowCancelButton(true)
-                            .setCancelButtonIntent(
-                                    MediaButtonReceiver.buildMediaButtonPendingIntent(context,
-                                            PlaybackStateCompat.ACTION_STOP)))
-                            .setSmallIcon(R.drawable.ic_music_box)
+                    builder.setSmallIcon(R.drawable.ic_music_box)
                             .setContentTitle(description.title)
                             .setContentText(description.subtitle)
                             .setLargeIcon(bitmap)
@@ -97,8 +87,10 @@ class MusicplayerNotification(private val mService: MusicplayerService) {
                                     context, PlaybackStateCompat.ACTION_STOP))
                             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
+                    var actions = 1
                     // If skip to next action is enabled.
                     if (mState.actions and PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS != 0L) {
+                        actions++
                         builder.addAction(NotificationCompat.Action(
                                 R.drawable.ic_skip_previous,
                                 context.getString(R.string.previous),
@@ -125,6 +117,7 @@ class MusicplayerNotification(private val mService: MusicplayerService) {
 
                     // If skip to prev action is enabled.
                     if (mState.actions and PlaybackStateCompat.ACTION_SKIP_TO_NEXT != 0L) {
+                        actions++
                         builder.addAction(NotificationCompat.Action(
                                 R.drawable.ic_skip_next,
                                 context.getString(R.string.next),
@@ -132,6 +125,19 @@ class MusicplayerNotification(private val mService: MusicplayerService) {
                                         context,
                                         PlaybackStateCompat.ACTION_SKIP_TO_NEXT)))
                     }
+
+                    val args = IntArray(actions)
+                    for (i in 0 until actions) {
+                        args[i] = i
+                    }
+
+                    builder.setStyle(android.support.v4.media.app.NotificationCompat.MediaStyle()
+                            .setMediaSession(mSession.sessionToken)
+                            .setShowActionsInCompactView(*args)
+                            .setShowCancelButton(true)
+                            .setCancelButtonIntent(
+                                    MediaButtonReceiver.buildMediaButtonPendingIntent(context,
+                                            PlaybackStateCompat.ACTION_STOP)))
 
                     return builder.build()
                 }
