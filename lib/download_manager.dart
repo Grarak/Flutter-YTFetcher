@@ -232,6 +232,10 @@ class DownloadManager implements DownloadListener {
     return downloadManager;
   }
 
+  bool isQueued(YoutubeResult result) {
+    return downloads.contains(_createDownload(result));
+  }
+
   @override
   void onDownloadComplete(Download download) {
     listener?.onDownloadCompleted(download);

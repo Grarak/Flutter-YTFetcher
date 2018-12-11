@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../api/youtube_server.dart';
+import '../download_manager.dart';
 
 class Music extends StatelessWidget {
   final YoutubeResult result;
@@ -28,23 +30,50 @@ class Music extends StatelessWidget {
             image: new CachedNetworkImageProvider(result.thumbnail),
             fit: BoxFit.cover,
             child: new InkWell(
-              onTap: onClick,
-              child: new Align(
-                alignment: Alignment(1.0, 1.0),
-                child: new Container(
-                  height: 20.0,
-                  margin: EdgeInsets.all(6.0),
-                  width: 50.0,
-                  color: new Color(0x80000000),
-                  child: new Center(
-                    child: new Text(
-                      result.duration,
-                      style: new TextStyle(fontSize: 12.0, color: Colors.white),
+                onTap: onClick,
+                child: new Stack(
+                  children: <Widget>[
+                    new Align(
+                      alignment: Alignment(1.0, 1.0),
+                      child: new Container(
+                        height: 20.0,
+                        margin: EdgeInsets.all(6.0),
+                        width: 50.0,
+                        color: new Color(0x80000000),
+                        child: new Center(
+                          child: new Text(
+                            result.duration,
+                            style: new TextStyle(
+                                fontSize: 12.0, color: Colors.white),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
-            ),
+                    new FutureBuilder(
+                      future: DownloadManager.instance,
+                      builder: (BuildContext context,
+                          AsyncSnapshot<DownloadManager> snapshot) {
+                        if (snapshot.hasData &&
+                            snapshot.hasData &&
+                            snapshot.data.isQueued(result)) {
+                          return new Container(
+                            color: new Color(0x80000000),
+                            child: new Center(
+                              child: new Text(
+                                "Downloaded",
+                                style: new TextStyle(
+                                  fontSize: 16.0,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        return new Container();
+                      },
+                    ),
+                  ],
+                )),
           ),
         ),
         elevation: 4.0,
@@ -53,33 +82,46 @@ class Music extends StatelessWidget {
   }
 
   Widget _buildPopupMenu() {
-    return new PopupMenuButton<int>(
-      padding: EdgeInsets.zero,
-      icon: new Icon(Icons.more_vert),
-      onSelected: (int selection) {
-        switch (selection) {
-          case 0:
-            if (onAddPlaylist != null) {
-              onAddPlaylist();
-            }
-            break;
-          case 1:
-            if (onDownload != null) {
-              onDownload();
-            }
-            break;
-        }
-      },
-      itemBuilder: (BuildContext context) => <PopupMenuItem<int>>[
+    return new FutureBuilder(
+      future: DownloadManager.instance,
+      builder: (BuildContext context, AsyncSnapshot<DownloadManager> snapshot) {
+        if (snapshot.hasData) {
+          List<PopupMenuItem<int>> items = [
             new PopupMenuItem<int>(
               value: 0,
               child: new Text("Add to playlist"),
             ),
-            new PopupMenuItem(
+          ];
+
+          if (!snapshot.data.isQueued(result)) {
+            items.add(new PopupMenuItem(
               value: 1,
               child: new Text("Download"),
-            ),
-          ],
+            ));
+          }
+
+          return new PopupMenuButton<int>(
+            padding: EdgeInsets.zero,
+            icon: new Icon(Icons.more_vert),
+            onSelected: (int selection) {
+              switch (selection) {
+                case 0:
+                  if (onAddPlaylist != null) {
+                    onAddPlaylist();
+                  }
+                  break;
+                case 1:
+                  if (onDownload != null) {
+                    onDownload();
+                  }
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => items,
+          );
+        }
+        return new CupertinoActivityIndicator();
+      },
     );
   }
 

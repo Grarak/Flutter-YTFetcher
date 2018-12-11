@@ -369,6 +369,7 @@ class _SeekState extends State<_Seek> {
         _position > _duration) {
       return new CupertinoActivityIndicator();
     }
+
     return new Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[

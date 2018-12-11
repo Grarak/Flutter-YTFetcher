@@ -84,6 +84,132 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
     super.dispose();
   }
 
+  Widget _buildPopupMenu(YoutubeResult item) {
+    return new FutureBuilder(
+      future: DownloadManager.instance,
+      builder: (BuildContext context, AsyncSnapshot<DownloadManager> snapshot) {
+        if (snapshot.hasData) {
+          List<PopupMenuItem<int>> items = [
+            new PopupMenuItem<int>(
+              value: 0,
+              child: new Text("Remove from playlist"),
+            ),
+            new PopupMenuItem(
+              value: 1,
+              child: new Text("Move up"),
+            ),
+            new PopupMenuItem(
+              value: 2,
+              child: new Text("Move down"),
+            ),
+          ];
+
+          if (!snapshot.data.isQueued(item)) {
+            items.add(new PopupMenuItem(
+              value: 3,
+              child: new Text("Download"),
+            ));
+          }
+
+          return new PopupMenuButton<int>(
+            padding: EdgeInsets.zero,
+            icon: new Icon(Icons.more_vert),
+            onSelected: (int selection) async {
+              switch (selection) {
+                case 0:
+                  if (widget.results.length == 1) {
+                    needsUpdate = true;
+                    widget.results.remove(item);
+                    onBackClick();
+                  } else {
+                    setState(() {
+                      needsUpdate = true;
+                      widget.results.remove(item);
+                    });
+                  }
+                  break;
+                case 1:
+                  int index = widget.results.indexOf(item);
+                  if (index - 1 >= 0) {
+                    setState(() {
+                      needsUpdate = true;
+                      widget.results[index] = widget.results[index - 1];
+                      widget.results[index - 1] = item;
+                    });
+                  }
+                  break;
+                case 2:
+                  int index = widget.results.indexOf(item);
+                  if (index + 1 < widget.results.length) {
+                    setState(() {
+                      needsUpdate = true;
+                      widget.results[index] = widget.results[index + 1];
+                      widget.results[index + 1] = item;
+                    });
+                  }
+                  break;
+                case 3:
+                  DownloadManager downloadManager =
+                      await DownloadManager.instance;
+                  downloadManager.queue(context, item);
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => items,
+          );
+        }
+        return new CupertinoActivityIndicator();
+      },
+    );
+  }
+
+  Widget _buildItem(YoutubeResult item) {
+    return new FutureBuilder(
+      future: DownloadManager.instance,
+      builder: (BuildContext context, AsyncSnapshot<DownloadManager> snapshot) {
+        if (snapshot.hasData) {
+          List<Widget> children = [
+            new Expanded(
+              child: new Padding(
+                padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0),
+                child: new Text(item.title),
+              ),
+            ),
+          ];
+
+          if (snapshot.data.isQueued(item)) {
+            children.add(
+              new Padding(
+                padding: EdgeInsets.only(left: 16.0),
+                child: new Text(
+                  "Downloaded",
+                  style: new TextStyle(
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
+              ),
+            );
+          }
+          children.add(_buildPopupMenu(item));
+
+          final Decoration decoration = BoxDecoration(
+            border: Border(
+              bottom: Divider.createBorderSide(context),
+            ),
+          );
+
+          return new DecoratedBox(
+            position: DecorationPosition.foreground,
+            decoration: decoration,
+            child: new Row(children: children),
+          );
+        }
+        return CupertinoActivityIndicator();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
@@ -145,80 +271,7 @@ class _PlaylistIdsPageState extends State<_PlaylistIdsPage> {
       body: new DragAndDropList<YoutubeResult>(widget.results,
           itemBuilder: (BuildContext context, item) {
             return new InkWell(
-              child: new Row(
-                children: <Widget>[
-                  new Expanded(
-                    child: new Padding(
-                      padding:
-                          EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0),
-                      child: new Text(item.title),
-                    ),
-                  ),
-                  new PopupMenuButton<int>(
-                    padding: EdgeInsets.zero,
-                    icon: new Icon(Icons.more_vert),
-                    onSelected: (int selection) async {
-                      switch (selection) {
-                        case 0:
-                          if (widget.results.length == 1) {
-                            needsUpdate = true;
-                            widget.results.remove(item);
-                            onBackClick();
-                          } else {
-                            setState(() {
-                              needsUpdate = true;
-                              widget.results.remove(item);
-                            });
-                          }
-                          break;
-                        case 1:
-                          int index = widget.results.indexOf(item);
-                          if (index - 1 >= 0) {
-                            setState(() {
-                              needsUpdate = true;
-                              widget.results[index] = widget.results[index - 1];
-                              widget.results[index - 1] = item;
-                            });
-                          }
-                          break;
-                        case 2:
-                          int index = widget.results.indexOf(item);
-                          if (index + 1 < widget.results.length) {
-                            setState(() {
-                              needsUpdate = true;
-                              widget.results[index] = widget.results[index + 1];
-                              widget.results[index + 1] = item;
-                            });
-                          }
-                          break;
-                        case 3:
-                          DownloadManager downloadManager =
-                              await DownloadManager.instance;
-                          downloadManager.queue(context, item);
-                          break;
-                      }
-                    },
-                    itemBuilder: (BuildContext context) => <PopupMenuItem<int>>[
-                          new PopupMenuItem<int>(
-                            value: 0,
-                            child: new Text("Remove from playlist"),
-                          ),
-                          new PopupMenuItem(
-                            value: 1,
-                            child: new Text("Move up"),
-                          ),
-                          new PopupMenuItem(
-                            value: 2,
-                            child: new Text("Move down"),
-                          ),
-                          new PopupMenuItem(
-                            value: 3,
-                            child: new Text("Download"),
-                          ),
-                        ],
-                  ),
-                ],
-              ),
+              child: _buildItem(item),
               onTap: () {
                 Musicplayer.instance.playTrack(
                     widget.playlistServer.host, item.toTrack(widget.apiKey));
