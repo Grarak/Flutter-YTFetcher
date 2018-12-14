@@ -22,6 +22,7 @@ class Download {
   final List<DownloadListener> _listeners = new List();
   IOSink _sink;
   HttpClient _client;
+  bool _active = false;
   bool _closed = false;
 
   Download(this._manager, this._root, this.youtubeResult);
@@ -67,12 +68,17 @@ class Download {
       _downloadFile.createSync();
     }
 
-    if (_manager._activeDownloads > 5) {
+    print("start downloading ${youtubeResult.title}");
+
+    if (_manager._activeDownloads > 5 && !_active) {
       _startDownloadDelayed();
       return;
     }
 
-    _manager._activeDownloads++;
+    if (!_active) {
+      _manager._activeDownloads++;
+    }
+    _active = true;
     server?.close();
     server = new YoutubeServer(host);
     server.fetchSong(
