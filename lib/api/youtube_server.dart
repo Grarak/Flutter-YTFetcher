@@ -6,8 +6,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:musicplayer/musicplayer.dart';
 
 import 'server.dart';
-import '../utils.dart';
-import 'codes.dart' as codes;
+import '../utils.dart' as utils;
 
 part 'youtube_server.g.dart';
 
@@ -42,13 +41,7 @@ class YoutubeResult {
 
   factory YoutubeResult.fromJson(Map<String, dynamic> j) {
     YoutubeResult youtubeResult = _$YoutubeResultFromJson(j);
-    List<int> bytes = new List();
-    for (int i = 0; i < youtubeResult.title.length; i++) {
-      bytes.add(youtubeResult.title.codeUnitAt(i));
-    }
-    try {
-      youtubeResult.title = utf8.decode(bytes);
-    } on FormatException catch (_) {}
+    youtubeResult.title = utils.decodeUTF8(youtubeResult.title);
     return youtubeResult;
   }
 
@@ -92,7 +85,7 @@ class YoutubeServer extends Server {
       List<YoutubeResult> results = new List();
 
       List<dynamic> unparsedResults = json.decode(response);
-      Settings.saveString("charts", response);
+      utils.Settings.saveString("charts", response);
 
       for (dynamic result in unparsedResults) {
         results.add(YoutubeResult.fromJson(result));
@@ -101,7 +94,7 @@ class YoutubeServer extends Server {
       return results;
     }
 
-    String cached = await Settings.getString("charts", null);
+    String cached = await utils.Settings.getString("charts", null);
     if (cached != null) {
       return _parseCharts(cached);
     }
@@ -136,16 +129,16 @@ class YoutubeServer extends Server {
   }
 
   static void saveResult(YoutubeResult result) {
-    Settings.saveString("resultId_${result.id}", result.toString());
+    utils.Settings.saveString("resultId_${result.id}", result.toString());
   }
 
   static Future<YoutubeResult> parseInfo(String id, String response) async {
     if (response != null) {
-      Settings.saveString("resultId_$id", response);
+      utils.Settings.saveString("resultId_$id", response);
       return YoutubeResult.fromString(response);
     }
 
-    String cached = await Settings.getString("resultId_$id", null);
+    String cached = await utils.Settings.getString("resultId_$id", null);
     if (cached != null) {
       return parseInfo(id, cached);
     }

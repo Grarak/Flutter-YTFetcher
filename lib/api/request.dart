@@ -44,8 +44,9 @@ class Request {
       });
       request.followRedirects = false;
       if (data != null) {
-        request.contentLength = data.length;
-        request.add(utf8.encode(data));
+        List<int> bytes = utf8.encode(data);
+        request.contentLength = bytes.length;
+        request.add(bytes);
       }
     } on Error catch (error) {
       onError(error);

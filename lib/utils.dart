@@ -20,6 +20,17 @@ String fromSeconds(int totalSeconds) {
   return "$minutesString:$secondsString";
 }
 
+String decodeUTF8(String text) {
+  List<int> bytes = new List();
+  for (int i = 0; i < text.length; i++) {
+    bytes.add(text.codeUnitAt(i));
+  }
+  try {
+    text = utf8.decode(bytes);
+  } on FormatException catch (_) {}
+  return text;
+}
+
 class Settings {
   static void setApiKey(String apiKey) {
     saveString("apikey", apiKey);

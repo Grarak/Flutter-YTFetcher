@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'server.dart';
-import '../utils.dart';
+import '../utils.dart' as utils;
 
 part 'playlist_server.g.dart';
 
@@ -18,7 +18,9 @@ class Playlist {
   Playlist({this.apikey, this.name, this.public});
 
   factory Playlist.fromJson(Map<String, dynamic> json) {
-    return _$PlaylistFromJson(json);
+    Playlist playlist = _$PlaylistFromJson(json);
+    playlist.name = utils.decodeUTF8(playlist.name);
+    return playlist;
   }
 
   Map<String, dynamic> toJson() {
@@ -72,7 +74,7 @@ class PlaylistServer extends Server {
       List<Playlist> results = new List();
 
       List<dynamic> unparsedJson = json.decode(response);
-      Settings.saveString("playlists", response);
+      utils.Settings.saveString("playlists", response);
 
       for (dynamic result in unparsedJson) {
         results.add(Playlist.fromJson(result));
@@ -80,7 +82,7 @@ class PlaylistServer extends Server {
       return results;
     }
 
-    String cached = await Settings.getString("playlists", null);
+    String cached = await utils.Settings.getString("playlists", null);
     if (cached != null) {
       return _parseList(cached);
     }
@@ -127,7 +129,7 @@ class PlaylistServer extends Server {
 
   Future<List<String>> _parseListIds(String name, String response) async {
     if (response != null) {
-      Settings.saveString("${name}_ids", response);
+      utils.Settings.saveString("${name}_ids", response);
       List<String> results = new List();
       for (dynamic result in json.decode(response)) {
         results.add(result);
@@ -135,7 +137,7 @@ class PlaylistServer extends Server {
       return results;
     }
 
-    String cached = await Settings.getString("${name}_ids", null);
+    String cached = await utils.Settings.getString("${name}_ids", null);
     if (cached != null) {
       return _parseListIds(name, cached);
     }
