@@ -235,11 +235,12 @@ class MusicplayerPlugin private constructor(private val context: Context,
     private fun playTracks(url: String, tracks: ArrayList<MusicTrack>, position: Int) {
         execute(object : TransportExecution {
             override fun onReady(transportControls: MediaControllerCompat.TransportControls) {
-                val bundle = Bundle()
-                bundle.putString("url", url)
-                bundle.putParcelableArrayList("tracks", tracks)
-                bundle.putInt("position", position)
-                transportControls.sendCustomAction(MusicplayerService.PLAY_TRACKS, bundle)
+                transportControls.sendCustomAction(MusicplayerService.PLAY_TRACKS,
+                        Bundle().apply {
+                            putString("url", url)
+                            putParcelableArrayList("tracks", tracks)
+                            putInt("position", position)
+                        })
             }
         })
     }

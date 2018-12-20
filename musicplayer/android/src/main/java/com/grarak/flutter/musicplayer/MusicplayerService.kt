@@ -62,14 +62,13 @@ class MusicplayerService : MediaBrowserServiceCompat(), ExoPlayerWrapper.OnPlaye
                     }
                 }
 
-                val bundle = Bundle()
-                bundle.putParcelableArrayList("tracks", mTracks)
-                bundle.putInt("position", mTrackPosition)
-                bundle.putFloat("duration", mExoPlayer.duration)
-
                 val state = PlaybackStateCompat.Builder()
                         .setActions(actions)
-                        .setExtras(bundle)
+                        .setExtras(Bundle().apply {
+                            putParcelableArrayList("tracks", mTracks)
+                            putInt("position", mTrackPosition)
+                            putFloat("duration", mExoPlayer.duration)
+                        })
                         .setState(value, (mExoPlayer.currentPosition * 1000).toLong(), 1f)
                         .build()
                 mSession.setPlaybackState(state)
@@ -351,11 +350,12 @@ class MusicplayerService : MediaBrowserServiceCompat(), ExoPlayerWrapper.OnPlaye
                 when (this) {
                     PLAY_TRACKS -> {
                         extras!!.run {
-                            val url = getString("url")
-                            val tracks = getParcelableArrayList<MusicTrack>("tracks")
+                            classLoader = MusicTrack::class.java.classLoader
+                            val url = getString("url")!!
+                            val tracks = getParcelableArrayList<MusicTrack>("tracks")!!
                             val position = getInt("position")
 
-                            playMusic(url!!, tracks!!, position)
+                            playMusic(url, tracks, position)
                         }
                     }
                 }
