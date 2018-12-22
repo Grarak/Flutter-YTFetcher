@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class Request internal constructor() : Closeable {
 
-    private var connection: HttpURLConnection? = null
     private val handler: Handler = Handler(Looper.getMainLooper())
     private val closed = AtomicBoolean()
 
@@ -29,11 +28,12 @@ class Request internal constructor() : Closeable {
         Thread.currentThread()
 
         closed.set(false)
+        var connection: HttpURLConnection? = null
         var outputStream: DataOutputStream? = null
 
         try {
             connection = URL(url).openConnection() as HttpURLConnection
-            connection!!.run {
+            connection.run {
                 connectTimeout = 3000
                 instanceFollowRedirects = false
                 if (contentType != null) {
@@ -79,7 +79,7 @@ class Request internal constructor() : Closeable {
                     }
                 }
                 synchronized(connectWait) {
-                    connectWait.wait()
+                    connectWait.wait(250)
                 }
                 closed.set(!connect)
                 val inputStream = if (statusCode < 200 || statusCode >= 300) errorStream else inputStream
@@ -100,7 +100,7 @@ class Request internal constructor() : Closeable {
                 if (!closed.get()) {
                     handler.post {
                         requestCallback.onSuccess(this@Request, statusCode,
-                                connection!!.headerFields, response.toString())
+                                headerFields, response.toString())
                     }
                 } else {
                     disconnect()

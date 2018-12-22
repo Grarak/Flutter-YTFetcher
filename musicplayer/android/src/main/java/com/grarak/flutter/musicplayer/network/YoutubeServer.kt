@@ -53,7 +53,9 @@ class YoutubeServer : Server("") {
                 return false
             }
 
-            override fun onSuccess(request: Request, status: Int, headers: Map<String, List<String>>, response: String) {}
+            override fun onSuccess(request: Request, status: Int, headers: Map<String, List<String>>,
+                                   response: String) {
+            }
 
             override fun onFailure(request: Request, e: Exception?) {
                 verifyForwardedSong()
