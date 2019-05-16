@@ -73,6 +73,12 @@ class Request {
           return;
       }
 
+      if (response.statusCode < HttpStatus.ok ||
+          response.statusCode >= HttpStatus.multipleChoices) {
+        onError(null);
+        return;
+      }
+
       if (onConnect != null && !onConnect(response.statusCode, uri)) {
         close();
         return;

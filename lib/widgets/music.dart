@@ -25,7 +25,7 @@ class Music extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
       child: new Material(
         child: new Material(
-          elevation: -16.0,
+          elevation: 4.0,
           child: new Ink.image(
             image: new CachedNetworkImageProvider(result.thumbnail),
             fit: BoxFit.cover,
